@@ -1,0 +1,6 @@
+{
+  "name": "Chia-SN | Compta & Conseil Fiscal",
+  "description": "Cabinet d'expertise comptable et conseil fiscal au Cameroun spécialisé en normes SYSCOHADA et DSF.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

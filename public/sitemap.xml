@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Page d'accueil / Home -->
+  <url>
+    <loc>https://chia-sn.cm/</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://chia-sn.cm/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://chia-sn.cm/?lang=en" />
+  </url>
+
+  <!-- Nos Services / Services -->
+  <url>
+    <loc>https://chia-sn.cm/#services</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Conformité & DSF / Compliance -->
+  <url>
+    <loc>https://chia-sn.cm/#compliance</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Questions Fréquentes / FAQ -->
+  <url>
+    <loc>https://chia-sn.cm/#faq</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Témoignages & Références / Testimonials -->
+  <url>
+    <loc>https://chia-sn.cm/#testimonials</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Consultation & Contact -->
+  <url>
+    <loc>https://chia-sn.cm/#contact</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Conditions Générales & Mentions Légales / Terms -->
+  <url>
+    <loc>https://chia-sn.cm/#terms</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>

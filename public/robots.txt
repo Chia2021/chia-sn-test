@@ -1,0 +1,11 @@
+# robots.txt for Cabinet Chia-SN (Expertise Comptable & Conseil Fiscal)
+User-agent: *
+Allow: /
+
+# Disallow admin query parameters or private sessions if applicable
+Disallow: /?admin=*
+Disallow: /*?token=*
+
+# Host & Sitemaps
+Host: https://chia-sn.cm
+Sitemap: https://chia-sn.cm/sitemap.xml
