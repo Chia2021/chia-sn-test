@@ -78,7 +78,7 @@ export function Navbar({
   return (
     <header
       id="main-header"
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-[52px] z-50 transition-all duration-300 ${
         isScrolled
           ? 'bg-white/95 backdrop-blur-md shadow-md py-3'
           : 'bg-white shadow-sm py-4'

@@ -20,8 +20,11 @@ export function TopBar({ currentLang, onToggleLang }: TopBarProps) {
   };
 
   return (
-    <div id="top-utility-bar" className="bg-[#0b3557] text-slate-100 text-xs py-2 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
+    <div
+      id="top-utility-bar"
+      className="fixed top-0 left-0 right-0 z-[60] w-full bg-[#0b3557]/95 text-slate-100 text-xs py-1.5 px-3 shadow-[0_8px_20px_rgba(2,6,23,0.18)] backdrop-blur-sm sm:py-2 sm:px-6 lg:px-8 transition-colors duration-200"
+    >
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-4">
         {/* Contact info snippets */}
         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 sm:gap-6 text-slate-200">
           <a
