@@ -24,6 +24,7 @@ import {
   mapServiceRow,
   mapTestimonialRow,
   mapTranslationRowsToObject,
+  mapTopBarSettingsRow,
 } from '../lib/supabaseMappers';
 
 const STORAGE_KEY_AUTH = 'chia_sn_admin_logged_in';
@@ -440,68 +441,81 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   });
 
   const loadSupabaseContent = useCallback(async () => {
-    try {
-      const [servicesResult, slidesResult, testimonialsResult, officesResult, translationsResult] =
-        await Promise.all([
-          supabase.from('services').select('*').order('sort_order', { ascending: true }),
-          supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true }),
-          supabase.from('testimonials').select('*').order('sort_order', { ascending: true }),
-          supabase.from('office_locations').select('*').order('sort_order', { ascending: true }),
-          supabase.from('page_translations').select('*'),
-        ]);
+  try {
+    const [
+      servicesResult,
+      slidesResult,
+      testimonialsResult,
+      officesResult,
+      translationsResult,
+      topBarResult,
+    ] = await Promise.all([
+      supabase.from('services').select('*').order('sort_order', { ascending: true }),
+      supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true }),
+      supabase.from('testimonials').select('*').order('sort_order', { ascending: true }),
+      supabase.from('office_locations').select('*').order('sort_order', { ascending: true }),
+      supabase.from('page_translations').select('*'),
+      supabase.from('site_settings').select('*').eq('id', 'top_bar').maybeSingle(),
+    ]);
 
-      const hasSupabaseData =
-        (servicesResult.data && servicesResult.data.length > 0) ||
-        (slidesResult.data && slidesResult.data.length > 0) ||
-        (testimonialsResult.data && testimonialsResult.data.length > 0) ||
-        (officesResult.data && officesResult.data.length > 0) ||
-        (translationsResult.data && translationsResult.data.length > 0);
+    const remoteTopBar = mapTopBarSettingsRow(topBarResult.data);
 
-      if (!hasSupabaseData) return;
+    const hasSupabaseData =
+      (servicesResult.data && servicesResult.data.length > 0) ||
+      (slidesResult.data && slidesResult.data.length > 0) ||
+      (testimonialsResult.data && testimonialsResult.data.length > 0) ||
+      (officesResult.data && officesResult.data.length > 0) ||
+      (translationsResult.data && translationsResult.data.length > 0) ||
+      !!remoteTopBar;
 
-      setContent((prevContent) => {
-        const nextContent: CMSContentData = {
-          translationsOverride: {
-            FR: translationsResult.data
-              ? mapTranslationRowsToObject(translationsResult.data, 'FR')
-              : {},
-            EN: translationsResult.data
-              ? mapTranslationRowsToObject(translationsResult.data, 'EN')
-              : {},
-          },
-          services: servicesResult.data?.length
-            ? servicesResult.data.map(mapServiceRow)
-            : defaultServices,
-          carouselSlides: slidesResult.data?.length
-            ? slidesResult.data.map(mapCarouselRow)
-            : defaultSlides,
-          testimonials: testimonialsResult.data?.length
-            ? testimonialsResult.data.map(mapTestimonialRow).map(normalizeTestimonialStatus)
-            : defaultTestimonials.map(normalizeTestimonialStatus),
-          officeLocations: officesResult.data?.length
-            ? officesResult.data.map(mapOfficeLocationRow)
-            : defaultOffices,
-          heroBg: prevContent.heroBg || DEFAULT_HERO_BG,
-          heroImages:
-            prevContent.heroImages && prevContent.heroImages.length > 0
-              ? prevContent.heroImages
-              : DEFAULT_HERO_SLIDES,
-          // Keep local top bar settings (not stored in Supabase)
-          topBarSettings: prevContent.topBarSettings,
-        };
+    if (!hasSupabaseData) return;
 
-        try {
-          safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(nextContent));
-        } catch (error) {
-          console.error('Failed to persist Supabase CMS content locally:', error);
-        }
+    setContent((prevContent) => {
+      const nextContent: CMSContentData = {
+        translationsOverride: {
+          FR: translationsResult.data
+            ? mapTranslationRowsToObject(translationsResult.data, 'FR')
+            : prevContent.translationsOverride.FR,
+          EN: translationsResult.data
+            ? mapTranslationRowsToObject(translationsResult.data, 'EN')
+            : prevContent.translationsOverride.EN,
+        },
+        services: servicesResult.data?.length
+          ? servicesResult.data.map(mapServiceRow)
+          : prevContent.services,
+        carouselSlides: slidesResult.data?.length
+          ? slidesResult.data.map(mapCarouselRow)
+          : prevContent.carouselSlides,
+        testimonials: testimonialsResult.data?.length
+          ? testimonialsResult.data.map(mapTestimonialRow).map(normalizeTestimonialStatus)
+          : prevContent.testimonials,
+        officeLocations: officesResult.data?.length
+          ? officesResult.data.map(mapOfficeLocationRow)
+          : prevContent.officeLocations,
+        heroBg: prevContent.heroBg || DEFAULT_HERO_BG,
+        heroImages:
+          prevContent.heroImages && prevContent.heroImages.length > 0
+            ? prevContent.heroImages
+            : DEFAULT_HERO_SLIDES,
+        // Supabase value wins if the row exists; else keep local
+        topBarSettings: remoteTopBar
+          ? normalizeTopBarSettings(remoteTopBar)
+          : prevContent.topBarSettings,
+      };
 
-        return nextContent;
-      });
-    } catch (error) {
-      console.error('Failed to load CMS content from Supabase:', error);
-    }
-  }, []);
+      try {
+        safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(nextContent));
+      } catch (error) {
+        console.error('Failed to persist Supabase CMS content locally:', error);
+      }
+
+      return nextContent;
+    });
+  } catch (error) {
+    console.error('Failed to load CMS content from Supabase:', error);
+  }
+}, []);
+ 
 
   useEffect(() => {
     void loadSupabaseContent();
@@ -1179,14 +1193,41 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateTopBarSettings = useCallback(
-    (updates: Partial<TopBarSettings>) => {
-      saveContent({
-        ...content,
-        topBarSettings: normalizeTopBarSettings({ ...content.topBarSettings, ...updates }),
-      });
-    },
-    [content, saveContent]
-  );
+  (updates: Partial<TopBarSettings>) => {
+    const nextSettings = normalizeTopBarSettings({
+      ...content.topBarSettings,
+      ...updates,
+    });
+
+    saveContent({
+      ...content,
+      topBarSettings: nextSettings,
+    });
+
+    // Persist to Supabase (fire-and-forget with error log)
+    void (async () => {
+      try {
+        const { error } = await supabase
+          .from('site_settings')
+          .upsert(
+            {
+              id: 'top_bar',
+              value: nextSettings,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          );
+
+        if (error) {
+          console.error('Failed to upsert site_settings.top_bar:', error);
+        }
+      } catch (err) {
+        console.error('Failed to persist TopBar settings to Supabase:', err);
+      }
+    })();
+  },
+  [content, saveContent]
+);
 
   const exportBackup = useCallback(() => {
     const jsonStr = JSON.stringify(content, null, 2);

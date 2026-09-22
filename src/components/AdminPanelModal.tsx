@@ -34,6 +34,7 @@ import { compressImageFile } from '../utils/imageUtils';
 import { UserManagementSection } from './admin/UserManagementSection';
 import { SEOManagementSection } from './admin/SEOManagementSection';
 
+
 interface AdminPanelModalProps {
   currentLang: Language;
 }
