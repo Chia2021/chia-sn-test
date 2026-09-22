@@ -37,6 +37,7 @@ export interface OfficeLocation {
 export interface TestimonialItem {
   id: string;
   author: string;
+  email?: string;
   role: Record<Language, string>;
   company: string;
   industry: Record<Language, string>;
@@ -50,6 +51,8 @@ export interface TestimonialItem {
   serviceUsed: Record<Language, string>;
   avatarInitials: string;
   badge?: Record<Language, string>;
+  status?: 'published' | 'pending' | 'rejected';
+  submittedAt?: string;
 }
 
 export type SearchCategory = 'all' | 'services' | 'compliance' | 'locations' | 'testimonials';

@@ -90,6 +90,7 @@ export const mapOfficeLocationToRow = (location: OfficeLocation) => ({
 export const mapTestimonialRow = (row: Record<string, any>): TestimonialItem => ({
   id: row.id,
   author: row.author ?? '',
+  email: row.email ?? undefined,
   role: {
     FR: row.role_fr ?? '',
     EN: row.role_en ?? '',
@@ -125,11 +126,14 @@ export const mapTestimonialRow = (row: Record<string, any>): TestimonialItem => 
         EN: row.badge_en ?? '',
       }
     : undefined,
+  status: row.status ?? 'published',
+  submittedAt: row.submitted_at ?? row.submittedAt ?? undefined,
 });
 
 export const mapTestimonialToRow = (item: TestimonialItem) => ({
   id: item.id,
   author: item.author,
+  email: item.email ?? null,
   role_fr: item.role.FR,
   role_en: item.role.EN,
   company: item.company,
@@ -147,6 +151,8 @@ export const mapTestimonialToRow = (item: TestimonialItem) => ({
   avatar_initials: item.avatarInitials,
   badge_fr: item.badge?.FR ?? null,
   badge_en: item.badge?.EN ?? null,
+  status: item.status ?? 'published',
+  submitted_at: item.submittedAt ?? null,
 });
 
 export const mapFaqCategoryRow = (row: Record<string, any>): FAQCategory => ({

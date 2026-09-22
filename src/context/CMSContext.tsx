@@ -60,6 +60,17 @@ const safeStorageRemove = (key: string) => {
   }
 };
 
+const normalizeTestimonialStatus = (item: TestimonialItem): TestimonialItem => {
+  const safeStatus = item.status === 'pending' || item.status === 'rejected' || item.status === 'published'
+    ? item.status
+    : 'published';
+
+  return {
+    ...item,
+    status: safeStatus,
+  };
+};
+
 export const DEFAULT_HERO_BG =
   'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=2000&q=80';
 
@@ -154,6 +165,9 @@ interface CMSContextType {
   deleteCarouselSlide: (slideId: string) => void;
   updateTestimonial: (testi: TestimonialItem) => void;
   addTestimonial: (testi: TestimonialItem) => void;
+  approveTestimonial: (testiId: string) => void;
+  rejectTestimonial: (testiId: string) => void;
+  submitClientTestimonial: (draft: Omit<TestimonialItem, 'id' | 'status' | 'submittedAt'> & { id?: string; status?: 'pending'; submittedAt?: string }) => void;
   deleteTestimonial: (testiId: string) => void;
   updateOfficeLocation: (index: number, location: OfficeLocation) => void;
 
@@ -199,7 +213,9 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
 
   // Admin Auth State
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    return safeStorageGet(STORAGE_KEY_AUTH) === 'true';
+    const hasStoredAuth = safeStorageGet(STORAGE_KEY_AUTH) === 'true';
+    const hasStoredCurrentUser = !!safeStorageGet(STORAGE_KEY_CURRENT_USER);
+    return hasStoredAuth && hasStoredCurrentUser;
   });
 
   const loadAdminUsers = useCallback(async () => {
@@ -338,7 +354,9 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
           },
           services: parsed.services?.length ? parsed.services : defaultServices,
           carouselSlides: parsed.carouselSlides?.length ? parsed.carouselSlides : defaultSlides,
-          testimonials: parsed.testimonials?.length ? parsed.testimonials : defaultTestimonials,
+          testimonials: parsed.testimonials?.length
+            ? parsed.testimonials.map(normalizeTestimonialStatus)
+            : defaultTestimonials.map(normalizeTestimonialStatus),
           officeLocations: parsed.officeLocations?.length ? parsed.officeLocations : defaultOffices,
           heroBg: heroBgVal,
           heroImages: heroImgs,
@@ -351,7 +369,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       translationsOverride: { FR: {}, EN: {} },
       services: defaultServices,
       carouselSlides: defaultSlides,
-      testimonials: defaultTestimonials,
+      testimonials: defaultTestimonials.map(normalizeTestimonialStatus),
       officeLocations: defaultOffices,
       heroBg: DEFAULT_HERO_BG,
       heroImages: DEFAULT_HERO_SLIDES,
@@ -386,7 +404,9 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         },
         services: servicesResult.data?.length ? servicesResult.data.map(mapServiceRow) : defaultServices,
         carouselSlides: slidesResult.data?.length ? slidesResult.data.map(mapCarouselRow) : defaultSlides,
-        testimonials: testimonialsResult.data?.length ? testimonialsResult.data.map(mapTestimonialRow) : defaultTestimonials,
+        testimonials: testimonialsResult.data?.length
+          ? testimonialsResult.data.map(mapTestimonialRow).map(normalizeTestimonialStatus)
+          : defaultTestimonials.map(normalizeTestimonialStatus),
         officeLocations: officesResult.data?.length ? officesResult.data.map(mapOfficeLocationRow) : defaultOffices,
         heroBg: DEFAULT_HERO_BG,
         heroImages: DEFAULT_HERO_SLIDES,
@@ -409,9 +429,13 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
 
   // Persist content changes to localStorage
   const saveContent = useCallback((updated: CMSContentData) => {
-    setContent(updated);
+    const normalized: CMSContentData = {
+      ...updated,
+      testimonials: updated.testimonials.map(normalizeTestimonialStatus),
+    };
+    setContent(normalized);
     try {
-      safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(updated));
+      safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(normalized));
     } catch (err) {
       console.error('LocalStorage save error:', err);
     }
@@ -588,19 +612,24 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logoutAdmin = useCallback(async () => {
+    setIsAdmin(false);
+    setCurrentUser(null);
+    setIsInlineEditActive(false);
+    setIsAdminPanelOpen(false);
+    setIsLoginModalOpen(false);
+    setQuickEditTarget(null);
+    safeStorageRemove(STORAGE_KEY_AUTH);
+    safeStorageRemove(STORAGE_KEY_CURRENT_USER);
+
     try {
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Supabase sign-out failed:', error);
     }
 
-    setIsAdmin(false);
-    setCurrentUser(null);
-    setIsInlineEditActive(false);
-    setIsAdminPanelOpen(false);
-    setQuickEditTarget(null);
-    safeStorageRemove(STORAGE_KEY_AUTH);
-    safeStorageRemove(STORAGE_KEY_CURRENT_USER);
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   }, []);
 
   // Add User
@@ -997,6 +1026,39 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     [content, saveContent]
   );
 
+  const approveTestimonial = useCallback(
+    (testiId: string) => {
+      const updated = content.testimonials.map((t) =>
+        t.id === testiId ? { ...t, status: 'published', submittedAt: t.submittedAt || new Date().toISOString() } : t
+      );
+      saveContent({ ...content, testimonials: updated });
+    },
+    [content, saveContent]
+  );
+
+  const rejectTestimonial = useCallback(
+    (testiId: string) => {
+      const updated = content.testimonials.map((t) =>
+        t.id === testiId ? { ...t, status: 'rejected', submittedAt: t.submittedAt || new Date().toISOString() } : t
+      );
+      saveContent({ ...content, testimonials: updated });
+    },
+    [content, saveContent]
+  );
+
+  const submitClientTestimonial = useCallback(
+    (draft: Omit<TestimonialItem, 'id' | 'status' | 'submittedAt'> & { id?: string; status?: 'pending'; submittedAt?: string }) => {
+      const newTestimonial: TestimonialItem = {
+        ...draft,
+        id: draft.id || `pending-${Date.now()}`,
+        status: 'pending',
+        submittedAt: draft.submittedAt || new Date().toISOString(),
+      };
+      saveContent({ ...content, testimonials: [...content.testimonials, newTestimonial] });
+    },
+    [content, saveContent]
+  );
+
   const deleteTestimonial = useCallback(
     (testiId: string) => {
       const filtered = content.testimonials.filter((t) => t.id !== testiId);
@@ -1044,7 +1106,9 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
           },
           services: parsed.services?.length ? parsed.services : defaultServices,
           carouselSlides: parsed.carouselSlides?.length ? parsed.carouselSlides : defaultSlides,
-          testimonials: parsed.testimonials?.length ? parsed.testimonials : defaultTestimonials,
+          testimonials: parsed.testimonials?.length
+            ? parsed.testimonials.map(normalizeTestimonialStatus)
+            : defaultTestimonials.map(normalizeTestimonialStatus),
           officeLocations: parsed.officeLocations?.length ? parsed.officeLocations : defaultOffices,
           heroBg: heroBgVal,
           heroImages: heroImgs,
@@ -1064,7 +1128,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       translationsOverride: { FR: {}, EN: {} },
       services: defaultServices,
       carouselSlides: defaultSlides,
-      testimonials: defaultTestimonials,
+      testimonials: defaultTestimonials.map(normalizeTestimonialStatus),
       officeLocations: defaultOffices,
       heroBg: DEFAULT_HERO_BG,
       heroImages: DEFAULT_HERO_SLIDES,
@@ -1125,6 +1189,8 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         deleteCarouselSlide,
         updateTestimonial,
         addTestimonial,
+        approveTestimonial,
+        submitClientTestimonial,
         deleteTestimonial,
         updateOfficeLocation,
         exportBackup,

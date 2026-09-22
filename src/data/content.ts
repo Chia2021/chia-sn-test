@@ -253,7 +253,8 @@ export const testimonialsData: TestimonialItem[] = [
     badge: {
       FR: 'Partenaire depuis 2021',
       EN: 'Partner since 2021'
-    }
+    },
+    status: 'published'
   },
   {
     id: 'testi-2',
@@ -288,7 +289,8 @@ export const testimonialsData: TestimonialItem[] = [
     badge: {
       FR: 'Audit & Formation',
       EN: 'Audit & Training'
-    }
+    },
+    status: 'published'
   },
   {
     id: 'testi-3',
@@ -323,7 +325,8 @@ export const testimonialsData: TestimonialItem[] = [
     badge: {
       FR: 'Contentieux & Fiscalité',
       EN: 'Tax Dispute Advisory'
-    }
+    },
+    status: 'published'
   },
   {
     id: 'testi-4',
@@ -358,6 +361,7 @@ export const testimonialsData: TestimonialItem[] = [
     badge: {
       FR: 'Gestion Sociale & Paie',
       EN: 'Payroll & Social Security'
-    }
+    },
+    status: 'published'
   }
 ];

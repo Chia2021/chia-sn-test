@@ -43,6 +43,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
   const {
     isAdminPanelOpen,
     setIsAdminPanelOpen,
+    logoutAdmin,
     getTranslations,
     updateTextBilingual,
     services,
@@ -56,6 +57,8 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     testimonials,
     updateTestimonial,
     addTestimonial,
+    approveTestimonial,
+    rejectTestimonial,
     deleteTestimonial,
     officeLocations,
     updateOfficeLocation,
@@ -94,6 +97,19 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
   const tFR = getTranslations('FR');
   const tEN = getTranslations('EN');
+  const normalizedTestimonials = testimonials.map((item) => {
+    const safeStatus = item.status === 'pending' || item.status === 'rejected' || item.status === 'published'
+      ? item.status
+      : 'published';
+
+    return {
+      ...item,
+      status: safeStatus,
+    };
+  });
+  const pendingTestimonials = normalizedTestimonials.filter((item) => item.status === 'pending');
+  const approvedTestimonials = normalizedTestimonials.filter((item) => item.status === 'published');
+  const rejectedTestimonials = normalizedTestimonials.filter((item) => item.status === 'rejected');
 
   if (!isAdminPanelOpen) return null;
 
@@ -236,6 +252,13 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                   <span>{currentLang === 'FR' ? 'Enregistré !' : 'Saved!'}</span>
                 </div>
               )}
+              <button
+                type="button"
+                onClick={logoutAdmin}
+                className="px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold text-white hover:bg-red-500/20 hover:border-red-400/50 transition-colors"
+              >
+                {currentLang === 'FR' ? 'Déconnexion' : 'Logout'}
+              </button>
               <button
                 type="button"
                 onClick={() => setIsAdminPanelOpen(false)}
@@ -1074,156 +1097,199 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
               {/* TAB 5: TESTIMONIALS */}
               {activeTab === 'testimonials' && (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900">
-                        {currentLang === 'FR' ? 'Témoignages & Études de Cas' : 'Client Testimonials & Case Studies'}
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Ajoutez, modifiez ou supprimez les avis de clients certifiés.
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newId = `testi-${Date.now()}`;
-                        addTestimonial({
-                          id: newId,
-                          author: 'Nom du Dirigeant',
-                          role: { FR: 'Directeur Général', EN: 'Chief Executive Officer' },
-                          company: 'Nouvelle Société SA',
-                          industry: { FR: 'Commerce & Distribution', EN: 'Trade & Distribution' },
-                          location: 'Douala, Littoral',
-                          rating: 5,
-                          avatarInitials: 'ND',
-                          serviceUsed: { FR: 'Audit & Conformité DSF', EN: 'Statutory Audit & DSF' },
-                          quote: {
-                            FR: 'Une collaboration exemplaire et une expertise remarquable sur les normes fiscales camerounaises.',
-                            EN: 'Exemplary collaboration and remarkable expertise in Cameroonian tax standards.',
-                          },
-                          highlightMetric: {
-                            value: '0 FCFA',
-                            label: { FR: 'Pénalités fiscales', EN: 'Tax penalties' },
-                          },
-                        });
-                        showNotification();
-                      }}
-                      className="px-3.5 py-2 bg-[#0f4c81] hover:bg-[#1d70b8] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>{currentLang === 'FR' ? 'Ajouter un témoignage' : 'Add Testimonial'}</span>
-                    </button>
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-900">
+                      {currentLang === 'FR' ? 'Validation des témoignages clients' : 'Client testimonial moderation'}
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      {currentLang === 'FR'
+                        ? 'La file d’attente d’administration est strictement limitée à l’approbation ou au rejet des avis soumis.'
+                        : 'The admin review queue is limited to approving or rejecting submitted feedback.'}
+                    </p>
                   </div>
 
                   <div className="space-y-5">
-                    {testimonials.map((item, idx) => (
-                      <div
-                        key={item.id}
-                        className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] space-y-4"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-[#0f4c81] bg-blue-100 px-2.5 py-1 rounded-lg">
-                            Témoignage #{idx + 1} - {item.author} ({item.company})
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm('Supprimer ce témoignage ?')) {
-                                deleteTestimonial(item.id);
-                                showNotification();
-                              }
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                    <div className="space-y-4">
+                      <h5 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                        {currentLang === 'FR' ? 'En attente' : 'Pending'}
+                      </h5>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                              Auteur (Nom & Prénom)
-                            </label>
-                            <input
-                              type="text"
-                              value={item.author}
-                              onChange={(e) => {
-                                updateTestimonial({ ...item, author: e.target.value });
-                                showNotification();
-                              }}
-                              className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 outline-none"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                              Entreprise
-                            </label>
-                            <input
-                              type="text"
-                              value={item.company}
-                              onChange={(e) => {
-                                updateTestimonial({ ...item, company: e.target.value });
-                                showNotification();
-                              }}
-                              className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 outline-none"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                              Localisation
-                            </label>
-                            <input
-                              type="text"
-                              value={item.location}
-                              onChange={(e) => {
-                                updateTestimonial({ ...item, location: e.target.value });
-                                showNotification();
-                              }}
-                              className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 outline-none"
-                            />
-                          </div>
-                        </div>
+                      {pendingTestimonials.length > 0 ? (
+                        pendingTestimonials.map((item, idx) => (
+                          <div key={item.id} className="bg-amber-50/80 p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-[0_10px_24px_rgba(180,83,9,0.06)] space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-900 bg-amber-100 px-2 py-1 rounded-lg">
+                                  {currentLang === 'FR' ? 'À examiner' : 'Review'}
+                                </span>
+                                <span className="text-[10px] text-slate-500">#{idx + 1}</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    approveTestimonial(item.id);
+                                    showNotification();
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  {currentLang === 'FR' ? 'Approuver' : 'Approve'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm(currentLang === 'FR' ? 'Rejeter cette soumission ?' : 'Reject this submission?')) {
+                                      rejectTestimonial(item.id);
+                                      showNotification();
+                                    }
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold hover:bg-red-700"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  {currentLang === 'FR' ? 'Rejeter' : 'Reject'}
+                                </button>
+                              </div>
+                            </div>
 
-                        {/* Quote FR / EN */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                              Citation / Témoignage (FR)
-                            </label>
-                            <textarea
-                              rows={3}
-                              value={item.quote.FR}
-                              onChange={(e) => {
-                                updateTestimonial({
-                                  ...item,
-                                  quote: { ...item.quote, FR: e.target.value },
-                                });
-                                showNotification();
-                              }}
-                              className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 outline-none"
-                            />
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Auteur</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.author}</div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">E-mail</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.email || '—'}</div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Entreprise</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.company}</div>
+                              </div>
+                            </div>
+
+                            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 italic">
+                              “{item.quote.FR || item.quote.EN}”
+                            </div>
                           </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                              Quote / Review (EN)
-                            </label>
-                            <textarea
-                              rows={3}
-                              value={item.quote.EN}
-                              onChange={(e) => {
-                                updateTestimonial({
-                                  ...item,
-                                  quote: { ...item.quote, EN: e.target.value },
-                                });
-                                showNotification();
-                              }}
-                              className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 outline-none"
-                            />
-                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                          {currentLang === 'FR' ? 'Aucune soumission cliente en attente pour le moment.' : 'No customer submissions awaiting review.'}
                         </div>
-                      </div>
-                    ))}
+                      )}
+                    </div>
+
+                    <div className="space-y-4 pt-2 border-t border-slate-200">
+                      <h5 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                        {currentLang === 'FR' ? 'Approuvés' : 'Approved'}
+                      </h5>
+
+                      {approvedTestimonials.length > 0 ? (
+                        approvedTestimonials.map((item, idx) => (
+                          <div key={item.id} className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] space-y-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">
+                                  {currentLang === 'FR' ? 'Approuvé' : 'Approved'}
+                                </span>
+                                <span className="text-[10px] text-slate-500">#{idx + 1}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(currentLang === 'FR' ? 'Rejeter ce témoignage approuvé ?' : 'Reject this approved testimonial?')) {
+                                    rejectTestimonial(item.id);
+                                    showNotification();
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold hover:bg-red-700"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                {currentLang === 'FR' ? 'Rejeter' : 'Reject'}
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Auteur</label>
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{item.author}</div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">E-mail</label>
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{item.email || '—'}</div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Entreprise</label>
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{item.company}</div>
+                              </div>
+                            </div>
+
+                            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 italic">
+                              “{item.quote.FR || item.quote.EN}”
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                          {currentLang === 'FR' ? 'Aucun témoignage approuvé pour le moment.' : 'No approved testimonials yet.'}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-4 pt-2 border-t border-slate-200">
+                      <h5 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                        {currentLang === 'FR' ? 'Rejetés' : 'Rejected'}
+                      </h5>
+
+                      {rejectedTestimonials.length > 0 ? (
+                        rejectedTestimonials.map((item, idx) => (
+                          <div key={item.id} className="bg-rose-50/80 p-4 sm:p-5 rounded-2xl border border-rose-200 shadow-[0_10px_24px_rgba(190,24,93,0.06)] space-y-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-rose-700 bg-rose-100 px-2 py-1 rounded-lg">
+                                  {currentLang === 'FR' ? 'Rejeté' : 'Rejected'}
+                                </span>
+                                <span className="text-[10px] text-slate-500">#{idx + 1}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  approveTestimonial(item.id);
+                                  showNotification();
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                {currentLang === 'FR' ? 'Rétablir' : 'Restore'}
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Auteur</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.author}</div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">E-mail</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.email || '—'}</div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Entreprise</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.company}</div>
+                              </div>
+                            </div>
+
+                            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 italic">
+                              “{item.quote.FR || item.quote.EN}”
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                          {currentLang === 'FR' ? 'Aucun témoignage rejeté pour le moment.' : 'No rejected testimonials yet.'}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

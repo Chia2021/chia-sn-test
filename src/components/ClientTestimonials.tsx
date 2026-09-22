@@ -12,9 +12,11 @@ import {
   ArrowRight,
   Sparkles,
   Users,
-  Sliders
+  Sliders,
+  Send,
+  X,
 } from 'lucide-react';
-import { Language } from '../types';
+import { Language, TestimonialItem } from '../types';
 import { useCMS } from '../context/CMSContext';
 import { EditableText } from './EditableText';
 
@@ -23,9 +25,26 @@ interface ClientTestimonialsProps {
 }
 
 export function ClientTestimonials({ currentLang }: ClientTestimonialsProps) {
-  const { getTranslations, testimonials, isAdmin, setIsAdminPanelOpen } = useCMS();
+  const { getTranslations, testimonials, isAdmin, setIsAdminPanelOpen, submitClientTestimonial } = useCMS();
   const t = getTranslations(currentLang);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formState, setFormState] = useState({
+    author: '',
+    email: '',
+    company: '',
+    service: '',
+    location: '',
+    rating: 5,
+    quote: '',
+  });
+
+  const publishedTestimonials = testimonials.filter((item) => {
+    const status = item.status === 'pending' || item.status === 'rejected' || item.status === 'published'
+      ? item.status
+      : 'published';
+    return status === 'published';
+  });
 
   // Extract unique services for filtering
   const filterOptions = [
@@ -36,19 +55,19 @@ export function ClientTestimonials({ currentLang }: ClientTestimonialsProps) {
     { key: 'tax-control', label: currentLang === 'FR' ? 'Contrôle Fiscal' : 'Tax Defense' }
   ];
 
-  const filteredTestimonials = testimonials.filter((item) => {
+  const filteredTestimonials = publishedTestimonials.filter((item) => {
     if (selectedFilter === 'all') return true;
     if (selectedFilter === 'dsf') {
-      return item.id === 'testi-1';
+      return /DSF|tax|fiscal/i.test(item.serviceUsed[currentLang] || item.company || '');
     }
     if (selectedFilter === 'syscohada') {
-      return item.id === 'testi-2';
+      return /SYSCOHADA|OHADA|compliance|conformit/i.test(item.serviceUsed[currentLang] || item.company || '');
     }
     if (selectedFilter === 'tax-control') {
-      return item.id === 'testi-3';
+      return /contrôle|inspection|audit|tax/i.test(item.serviceUsed[currentLang] || item.company || '');
     }
     if (selectedFilter === 'payroll') {
-      return item.id === 'testi-4';
+      return /paie|payroll|bookkeeping|comptabilit/i.test(item.serviceUsed[currentLang] || item.company || '');
     }
     return true;
   });
@@ -58,6 +77,53 @@ export function ClientTestimonials({ currentLang }: ClientTestimonialsProps) {
     if (contactSection) {
       contactSection.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handleTestimonialSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!formState.author.trim() || !formState.email.trim() || !formState.company.trim() || !formState.quote.trim()) {
+      return;
+    }
+
+    const initials = formState.author
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+
+    submitClientTestimonial({
+      author: formState.author.trim(),
+      email: formState.email.trim(),
+      company: formState.company.trim(),
+      role: { FR: 'Client', EN: 'Client' },
+      industry: { FR: 'Expérience client', EN: 'Client experience' },
+      location: formState.location.trim() || 'Cameroun',
+      rating: Number(formState.rating) || 5,
+      quote: {
+        FR: formState.quote.trim(),
+        EN: formState.quote.trim(),
+      },
+      serviceUsed: {
+        FR: formState.service.trim() || 'Service de conseil',
+        EN: formState.service.trim() || 'Advisory service',
+      },
+      avatarInitials: initials,
+      badge: { FR: 'Soumission client', EN: 'Client submission' },
+      status: 'pending',
+    });
+
+    setFormState({
+      author: '',
+      email: '',
+      company: '',
+      service: '',
+      location: '',
+      rating: 5,
+      quote: '',
+    });
+    setIsFormOpen(false);
   };
 
   const trustStats = [
@@ -153,6 +219,168 @@ export function ClientTestimonials({ currentLang }: ClientTestimonialsProps) {
             </EditableText>
           </motion.div>
         </div>
+
+        <div className="mb-10 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setIsFormOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-[#0f4c81] px-5 py-2.5 text-sm font-bold text-white shadow-[0_14px_28px_rgba(15,76,129,0.22)] transition-all hover:bg-[#1d70b8]"
+          >
+            <Send className="w-4 h-4" />
+            <span>{currentLang === 'FR' ? 'Déposer un témoignage' : 'Share your testimonial'}</span>
+          </button>
+        </div>
+
+        <AnimatePresence>
+          {isFormOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              className="mb-12 overflow-hidden rounded-[32px] border border-[#dfeaf6] bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(244,247,252,0.92)_40%,_rgba(225,236,248,0.85)_100%)] p-4 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:p-6 lg:p-8"
+            >
+              <div className="mb-6 flex items-start justify-between gap-4 rounded-[24px] border border-slate-200/80 bg-white/60 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-sm sm:p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0f4c81] to-[#173a5a] text-white shadow-[0_12px_30px_rgba(15,76,129,0.28)]">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#0f4c81]">
+                      {currentLang === 'FR' ? 'Témoignage client' : 'Client testimonial'}
+                    </p>
+                    <h3 className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">
+                      {currentLang === 'FR' ? 'Votre expérience compte' : 'Your experience matters'}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {currentLang === 'FR'
+                        ? 'Déposez votre avis. Notre équipe le valide avant publication.'
+                        : 'Share your feedback. Our team reviews it before publishing.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsFormOpen(false)}
+                  className="rounded-full border border-slate-200 bg-white/70 p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                  aria-label="Close testimonial form"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleTestimonialSubmit} className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                    {currentLang === 'FR' ? 'Nom complet' : 'Full name'}
+                  </label>
+                  <input
+                    value={formState.author}
+                    onChange={(e) => setFormState((prev) => ({ ...prev, author: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0f4c81] focus:bg-white focus:ring-2 focus:ring-[#0f4c81]/10"
+                    placeholder={currentLang === 'FR' ? 'Votre nom' : 'Your name'}
+                    required
+                  />
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                    {currentLang === 'FR' ? 'Adresse e-mail' : 'Email address'}
+                  </label>
+                  <input
+                    type="email"
+                    value={formState.email}
+                    onChange={(e) => setFormState((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0f4c81] focus:bg-white focus:ring-2 focus:ring-[#0f4c81]/10"
+                    placeholder={currentLang === 'FR' ? 'prenom@entreprise.cm' : 'name@company.com'}
+                    required
+                  />
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                    {currentLang === 'FR' ? 'Entreprise / Structure' : 'Company / Organization'}
+                  </label>
+                  <input
+                    value={formState.company}
+                    onChange={(e) => setFormState((prev) => ({ ...prev, company: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0f4c81] focus:bg-white focus:ring-2 focus:ring-[#0f4c81]/10"
+                    placeholder={currentLang === 'FR' ? 'Nom de votre entreprise' : 'Your company name'}
+                    required
+                  />
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                    {currentLang === 'FR' ? 'Service concerné' : 'Service used'}
+                  </label>
+                  <input
+                    value={formState.service}
+                    onChange={(e) => setFormState((prev) => ({ ...prev, service: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0f4c81] focus:bg-white focus:ring-2 focus:ring-[#0f4c81]/10"
+                    placeholder={currentLang === 'FR' ? 'Audit, fiscalité, paie...' : 'Audit, tax compliance, payroll...'}
+                  />
+                </div>
+
+                <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                    {currentLang === 'FR' ? 'Localisation' : 'Location'}
+                  </label>
+                  <input
+                    value={formState.location}
+                    onChange={(e) => setFormState((prev) => ({ ...prev, location: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0f4c81] focus:bg-white focus:ring-2 focus:ring-[#0f4c81]/10"
+                    placeholder={currentLang === 'FR' ? 'Douala, Yaoundé...' : 'Douala, Yaoundé...'}
+                  />
+                </div>
+
+                <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                    {currentLang === 'FR' ? 'Votre note' : 'Your rating'}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        type="button"
+                        key={star}
+                        onClick={() => setFormState((prev) => ({ ...prev, rating: star }))}
+                        className="rounded-full p-1 transition hover:scale-110"
+                        aria-label={`Rate ${star} stars`}
+                      >
+                        <Star
+                          className={`h-6 w-6 ${star <= formState.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                    {currentLang === 'FR' ? 'Témoignage' : 'Testimonial'}
+                  </label>
+                  <textarea
+                    value={formState.quote}
+                    onChange={(e) => setFormState((prev) => ({ ...prev, quote: e.target.value }))}
+                    rows={5}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0f4c81] focus:bg-white focus:ring-2 focus:ring-[#0f4c81]/10"
+                    placeholder={currentLang === 'FR' ? 'Partagez votre expérience...' : 'Tell us about your experience...'}
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2 flex justify-end">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#0f4c81] to-[#173a5a] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(15,76,129,0.22)] transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_38px_rgba(15,76,129,0.28)]"
+                  >
+                    <Send className="h-4 w-4" />
+                    <span>{currentLang === 'FR' ? 'Soumettre pour validation' : 'Submit for review'}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Trust Metrics Bar */}
         <motion.div
