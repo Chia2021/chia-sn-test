@@ -78,6 +78,17 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [customHeroUrl, setCustomHeroUrl] = useState('');
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'default';
+  } | null>(null);
+  const [noticeModal, setNoticeModal] = useState<{
+    title: string;
+    message: string;
+    variant: 'success' | 'error' | 'info';
+  } | null>(null);
   const [serviceDraft, setServiceDraft] = useState<ServiceItem>(() => ({
     id: `service-${Date.now()}`,
     iconName: 'calculator',
@@ -128,7 +139,11 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
       updateHeroBg(compressedDataUrl);
       showNotification();
     } catch (err: any) {
-      alert(err.message || 'Erreur lors du traitement de l\'image.');
+      showNotice(
+        currentLang === 'FR' ? 'Erreur d’image' : 'Image error',
+        err.message || (currentLang === 'FR' ? 'Erreur lors du traitement de l\'image.' : 'Error while processing the image.'),
+        'error'
+      );
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -142,7 +157,11 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
       updateCarouselSlide({ ...slide, image: compressedDataUrl });
       showNotification();
     } catch (err: any) {
-      alert(err.message || 'Erreur lors du traitement de l\'image.');
+      showNotice(
+        currentLang === 'FR' ? 'Erreur d’image' : 'Image error',
+        err.message || (currentLang === 'FR' ? 'Erreur lors du traitement de l\'image.' : 'Error while processing the image.'),
+        'error'
+      );
     } finally {
       setIsUploading(false);
     }
@@ -159,9 +178,17 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
         const ok = importBackup(content);
         if (ok) {
           showNotification();
-          alert(currentLang === 'FR' ? 'Contenu importé avec succès !' : 'Content imported successfully!');
+          showNotice(
+            currentLang === 'FR' ? 'Importation réussie' : 'Import successful',
+            currentLang === 'FR' ? 'Contenu importé avec succès !' : 'Content imported successfully!',
+            'success'
+          );
         } else {
-          alert(currentLang === 'FR' ? 'Fichier JSON invalide.' : 'Invalid JSON file.');
+          showNotice(
+            currentLang === 'FR' ? 'Fichier invalide' : 'Invalid file',
+            currentLang === 'FR' ? 'Fichier JSON invalide.' : 'Invalid JSON file.',
+            'error'
+          );
         }
       }
     };
@@ -197,6 +224,21 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
       },
     });
     setIsAddServiceModalOpen(true);
+  };
+
+  const requestConfirm = (title: string, message: string, onConfirm: () => void, variant: 'danger' | 'default' = 'default') => {
+    setConfirmAction({ title, message, onConfirm, variant });
+  };
+
+  const handleConfirmAction = () => {
+    if (!confirmAction) return;
+    const { onConfirm } = confirmAction;
+    setConfirmAction(null);
+    onConfirm();
+  };
+
+  const showNotice = (title: string, message: string, variant: 'success' | 'error' | 'info' = 'success') => {
+    setNoticeModal({ title, message, variant });
   };
 
   const saveNewService = () => {
@@ -602,12 +644,20 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </span>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (confirm('Voulez-vous vraiment supprimer ce service ?')) {
-                                deleteService(service.id);
-                                showNotification();
-                              }
-                            }}
+                            onClick={() =>
+                              requestConfirm(
+                                currentLang === 'FR' ? 'Supprimer ce service ?' : 'Delete this service?',
+                                currentLang === 'FR'
+                                  ? 'Cette action supprimera définitivement le service de la boutique en ligne. Continuer ?'
+                                  : 'This action will permanently remove the service from the site. Continue?',
+                                () => {
+                                  deleteService(service.id);
+                                  showNotification();
+                                  setConfirmAction(null);
+                                },
+                                'danger'
+                              )
+                            }
                             className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                             title="Supprimer ce service"
                           >
@@ -811,12 +861,20 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </span>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (confirm('Voulez-vous supprimer cette diapositive ?')) {
-                                deleteCarouselSlide(slide.id);
-                                showNotification();
-                              }
-                            }}
+                            onClick={() =>
+                              requestConfirm(
+                                currentLang === 'FR' ? 'Supprimer cette diapositive ?' : 'Delete this slide?',
+                                currentLang === 'FR'
+                                  ? 'La diapositive sera retirée du carrousel public. Continuer ?'
+                                  : 'The slide will be removed from the public carousel. Continue?',
+                                () => {
+                                  deleteCarouselSlide(slide.id);
+                                  showNotification();
+                                  setConfirmAction(null);
+                                },
+                                'danger'
+                              )
+                            }
                             className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1138,12 +1196,20 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    if (confirm(currentLang === 'FR' ? 'Rejeter cette soumission ?' : 'Reject this submission?')) {
-                                      rejectTestimonial(item.id);
-                                      showNotification();
-                                    }
-                                  }}
+                                  onClick={() =>
+                                    requestConfirm(
+                                      currentLang === 'FR' ? 'Rejeter cette soumission ?' : 'Reject this submission?',
+                                      currentLang === 'FR'
+                                        ? 'Le témoignage ne sera plus visible sur le site public. Continuer ?'
+                                        : 'The testimonial will no longer be visible on the public website. Continue?',
+                                      () => {
+                                        rejectTestimonial(item.id);
+                                        showNotification();
+                                        setConfirmAction(null);
+                                      },
+                                      'danger'
+                                    )
+                                  }
                                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold hover:bg-red-700"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1196,12 +1262,20 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                               </div>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  if (confirm(currentLang === 'FR' ? 'Rejeter ce témoignage approuvé ?' : 'Reject this approved testimonial?')) {
-                                    rejectTestimonial(item.id);
-                                    showNotification();
-                                  }
-                                }}
+                                onClick={() =>
+                                  requestConfirm(
+                                    currentLang === 'FR' ? 'Rejeter ce témoignage approuvé ?' : 'Reject this approved testimonial?',
+                                    currentLang === 'FR'
+                                      ? 'Ce témoignage sera retiré de la page publique immédiatement. Continuer ?'
+                                      : 'This testimonial will be removed from the public page immediately. Continue?',
+                                    () => {
+                                      rejectTestimonial(item.id);
+                                      showNotification();
+                                      setConfirmAction(null);
+                                    },
+                                    'danger'
+                                  )
+                                }
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold hover:bg-red-700"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1471,16 +1545,20 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                       <button
                         type="button"
-                        onClick={() => {
-                          if (
-                            confirm(
-                              'Attention : Cette action effacera toutes vos modifications personnalisées. Continuer ?'
-                            )
-                          ) {
-                            resetToDefaults();
-                            showNotification();
-                          }
-                        }}
+                        onClick={() =>
+                          requestConfirm(
+                            currentLang === 'FR' ? 'Réinitialiser le contenu ?' : 'Reset the content?',
+                            currentLang === 'FR'
+                              ? 'Attention : cette action effacera toutes vos modifications personnalisées et restaurera le contenu d’origine. Continuer ?'
+                              : 'Warning: this action will clear all custom edits and restore the original content. Continue?',
+                            () => {
+                              resetToDefaults();
+                              showNotification();
+                              setConfirmAction(null);
+                            },
+                            'danger'
+                          )
+                        }
                         className="w-full py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
                       >
                         {currentLang === 'FR' ? 'Réinitialiser aux valeurs d\'origine' : 'Reset to Defaults'}
@@ -1505,6 +1583,109 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
       </div>
 
       <AnimatePresence>
+        {noticeModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              className="w-full max-w-md rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] overflow-hidden"
+            >
+              <div className={`px-5 py-4 border-b ${
+                noticeModal.variant === 'error'
+                  ? 'border-red-100 bg-red-50'
+                  : noticeModal.variant === 'success'
+                    ? 'border-emerald-100 bg-emerald-50'
+                    : 'border-slate-200 bg-slate-50'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${
+                    noticeModal.variant === 'error'
+                      ? 'bg-red-100 text-red-600'
+                      : noticeModal.variant === 'success'
+                        ? 'bg-emerald-100 text-emerald-600'
+                        : 'bg-slate-100 text-slate-700'
+                  }`}>
+                    {noticeModal.variant === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">{noticeModal.title}</h3>
+                    <p className="mt-1 text-xs text-slate-600">{noticeModal.message}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end px-5 py-4 bg-white">
+                <button
+                  type="button"
+                  onClick={() => setNoticeModal(null)}
+                  className="px-4 py-2 text-sm font-bold rounded-xl bg-[#0f4c81] hover:bg-[#1d70b8] text-white transition-colors"
+                >
+                  {currentLang === 'FR' ? 'OK' : 'OK'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {confirmAction && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              className="w-full max-w-md rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.26)] overflow-hidden"
+            >
+              <div className={`px-5 py-4 border-b ${confirmAction.variant === 'danger' ? 'border-red-100 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${confirmAction.variant === 'danger' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-700'}`}>
+                    {confirmAction.variant === 'danger' ? <AlertCircle className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">{confirmAction.title}</h3>
+                    <p className="mt-1 text-xs text-slate-600">{confirmAction.message}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 px-5 py-4 bg-white">
+                <button
+                  type="button"
+                  onClick={() => setConfirmAction(null)}
+                  className="px-4 py-2 text-sm font-semibold rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  {currentLang === 'FR' ? 'Annuler' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleConfirmAction();
+                  }}
+                  className={`px-4 py-2 text-sm font-bold rounded-xl text-white transition-colors ${
+                    confirmAction.variant === 'danger'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-[#0f4c81] hover:bg-[#1d70b8]'
+                  }`}
+                >
+                  {currentLang === 'FR' ? 'Confirmer' : 'Confirm'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {isAddServiceModalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
