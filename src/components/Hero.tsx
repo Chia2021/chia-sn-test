@@ -140,7 +140,7 @@ export function Hero({ currentLang }: HeroProps) {
             <motion.img
               src={activeImages[currentSlide % activeImages.length]}
               alt={`Chia-SN Slide ${(currentSlide % activeImages.length) + 1}`}
-              className="w-full h-full object-cover object-center brightness-[0.82] contrast-[1.08] saturate-[1.1]"
+              className="w-full h-full object-cover object-center brightness-[1.03] contrast-[1.14] saturate-[1.18]"
               initial={{ scale: 1.02 }}
               animate={{ scale: 1.10 }}
               transition={{ duration: 7, ease: 'linear' }}
@@ -148,10 +148,9 @@ export function Hero({ currentLang }: HeroProps) {
           </motion.div>
         </AnimatePresence>
 
-        {/* Keep the photo visible while preserving readability of the hero content */}
-        <div className="absolute inset-0 z-[2] bg-white/10" />
-        <div className="absolute inset-0 z-[3] bg-gradient-to-b from-white/35 via-white/10 to-white/60" />
-        <div className="absolute inset-0 z-[4] bg-gradient-to-r from-slate-100/20 via-transparent to-slate-100/20" />
+        <div className="absolute inset-0 z-[2] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.28),transparent_28%),linear-gradient(90deg,rgba(15,23,42,0.62)_0%,rgba(15,23,42,0.18)_38%,rgba(15,23,42,0.28)_100%)]" />
+        <div className="absolute inset-0 z-[3] bg-gradient-to-b from-slate-900/20 via-transparent to-slate-900/25" />
+        <div className="absolute inset-0 z-[4] bg-[radial-gradient(circle_at_bottom,_rgba(13,32,48,0.42),transparent_48%)]" />
       </div>
 
       {/* Admin quick image button */}
@@ -170,14 +169,15 @@ export function Hero({ currentLang }: HeroProps) {
       {/* FOREGROUND: Text displays firmly in front with crisp Framer Motion animations */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 md:pt-28 md:pb-20 w-full">
         <div className="mb-6 flex justify-center">
-          <div className="group relative w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/60 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.25),_rgba(15,76,129,0.18)_40%,_rgba(11,53,87,0.82)_100%)] shadow-[0_30px_80px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-all duration-500 ease-out hover:shadow-[0_34px_90px_rgba(15,23,42,0.42)]">
+          <div className="group relative w-full max-w-5xl overflow-hidden rounded-[30px] border border-white/55 bg-[linear-gradient(135deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] shadow-[0_32px_100px_rgba(15,23,42,0.38)] ring-1 ring-white/20 transition-all duration-500 ease-out hover:shadow-[0_38px_110px_rgba(15,23,42,0.46)]">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/80 to-transparent" />
             <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-7">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/12 ring-1 ring-white/30 text-[#fef3c7] shadow-inner shadow-white/10">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/12 ring-1 ring-white/30 text-[#fef3c7] shadow-[inset_0_1px_0_rgba(255,255,255,0.22)]">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 text-left">
-                  <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-100/85">
+                  <p className="truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-100/90">
                     {t['hero-badge']}
                   </p>
                   <p className="truncate text-sm font-semibold text-white sm:text-base">
@@ -186,14 +186,14 @@ export function Hero({ currentLang }: HeroProps) {
                 </div>
               </div>
 
-              <div className="hidden shrink-0 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] sm:inline-flex">
+              <div className="hidden shrink-0 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] sm:inline-flex">
                 <span>{currentLang === 'FR' ? 'Découvrir plus' : 'Discover more'}</span>
                 <ArrowRight className="h-3.5 w-3.5 text-amber-300" />
               </div>
             </div>
 
             <div className="grid max-h-0 grid-rows-[0fr] translate-y-2 opacity-0 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:max-h-[420px] group-hover:grid-rows-[1fr] group-hover:translate-y-0 group-hover:opacity-100">
-              <div className="overflow-hidden border-t border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04))] backdrop-blur-xl">
+              <div className="overflow-hidden border-t border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.05))]">
                 <div className="px-5 py-5 text-left text-slate-100 sm:px-7">
                   <div className="mb-4 flex flex-wrap gap-2">
                     {[
@@ -277,9 +277,9 @@ export function Hero({ currentLang }: HeroProps) {
               <motion.div
                 key={idx}
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="flex flex-col items-center text-center p-3.5 sm:p-4 rounded-xl bg-white/90 hover:bg-white backdrop-blur-md border border-slate-200/90 hover:border-blue-200 transition-all shadow-xs hover:shadow-md"
+                className="flex flex-col items-center text-center p-3.5 sm:p-4 rounded-2xl bg-white/90 hover:bg-white border border-slate-200/90 hover:border-amber-200 transition-all shadow-[0_16px_32px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_36px_rgba(15,23,42,0.12)]"
               >
-                <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#0f4c81] flex items-center justify-center mb-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-100 to-amber-50 text-[#0f4c81] flex items-center justify-center mb-2 ring-1 ring-sky-100 shadow-inner shadow-sky-100/60">
                   <Icon className="w-5 h-5" />
                 </div>
                 <EditableText translationKey={stat.key} label={`Stat ${idx + 1}`}>

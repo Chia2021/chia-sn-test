@@ -74,6 +74,21 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
   const [saveSuccessNotice, setSaveSuccessNotice] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [customHeroUrl, setCustomHeroUrl] = useState('');
+  const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [serviceDraft, setServiceDraft] = useState<ServiceItem>(() => ({
+    id: `service-${Date.now()}`,
+    iconName: 'calculator',
+    badge: { FR: 'Nouveau Service', EN: 'New Service' },
+    title: { FR: 'Nouveau Service Conseil', EN: 'New Advisory Service' },
+    description: {
+      FR: 'Description détaillée de la nouvelle prestation comptable ou fiscale.',
+      EN: 'Detailed description of this new accounting or tax advisory offering.',
+    },
+    deliverables: {
+      FR: ['Livrable 1 : Analyse préliminaire', 'Livrable 2 : Rapport exécutif'],
+      EN: ['Deliverable 1: Preliminary analysis', 'Deliverable 2: Executive report'],
+    },
+  }));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -150,6 +165,30 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     { id: 'backup', label: currentLang === 'FR' ? 'Sauvegarde & Import' : 'Backup & Restore', icon: Download },
   ];
 
+  const openNewServiceModal = () => {
+    setServiceDraft({
+      id: `service-${Date.now()}`,
+      iconName: 'calculator',
+      badge: { FR: 'Nouveau Service', EN: 'New Service' },
+      title: { FR: 'Nouveau Service Conseil', EN: 'New Advisory Service' },
+      description: {
+        FR: 'Description détaillée de la nouvelle prestation comptable ou fiscale.',
+        EN: 'Detailed description of this new accounting or tax advisory offering.',
+      },
+      deliverables: {
+        FR: ['Livrable 1 : Analyse préliminaire', 'Livrable 2 : Rapport exécutif'],
+        EN: ['Deliverable 1: Preliminary analysis', 'Deliverable 2: Executive report'],
+      },
+    });
+    setIsAddServiceModalOpen(true);
+  };
+
+  const saveNewService = () => {
+    addService(serviceDraft);
+    setIsAddServiceModalOpen(false);
+    showNotification();
+  };
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
@@ -167,40 +206,40 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
           initial={{ opacity: 0, scale: 0.97, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: 15 }}
-          className="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-10 my-6 flex flex-col max-h-[90vh]"
+          className="relative w-full max-w-6xl bg-white/95 rounded-[28px] shadow-[0_30px_80px_rgba(15,23,42,0.22)] border border-slate-200/80 overflow-hidden z-10 my-6 flex flex-col max-h-[90vh] backdrop-blur-xl"
         >
           {/* Top Bar */}
-          <div className="px-6 py-4 border-b border-slate-200 bg-slate-900 text-white flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#0f4c81] rounded-xl text-white">
+          <div className="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-950 via-[#0b3557] to-[#0f4c81] text-white flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 bg-white/10 rounded-2xl text-white border border-white/10 shadow-inner shadow-white/5">
                 <Sliders className="w-5 h-5" />
               </div>
-              <div>
-                <h3 className="font-bold text-base sm:text-lg flex items-center gap-2">
+              <div className="min-w-0">
+                <h3 className="font-bold text-base sm:text-lg flex items-center flex-wrap gap-2">
                   <span>{currentLang === 'FR' ? 'Panneau Administrateur CMS' : 'Admin CMS Control Center'}</span>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     En direct
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-300 truncate">
                   {currentLang === 'FR'
                     ? 'Modifiez tous les textes, téléversez des images et gérez l\'intégralité du contenu.'
-                    : 'Modify all site texts, upload images, and control all section contents.'}
+                    : 'Modify all site texts, upload images, and control all section content.'}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {saveSuccessNotice && (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500 text-white text-xs font-bold animate-pulse">
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/90 text-white text-xs font-bold animate-pulse shadow-sm shadow-emerald-600/40">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{currentLang === 'FR' ? 'Modifications enregistrées !' : 'Saved!'}</span>
+                  <span>{currentLang === 'FR' ? 'Enregistré !' : 'Saved!'}</span>
                 </div>
               )}
               <button
                 type="button"
                 onClick={() => setIsAdminPanelOpen(false)}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -208,9 +247,9 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
           </div>
 
           {/* Main Layout: Tabs + Content */}
-          <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+          <div className="flex flex-col md:flex-row flex-1 overflow-hidden bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100">
             {/* Sidebar Navigation */}
-            <div className="w-full md:w-60 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 p-3 shrink-0 overflow-x-auto md:overflow-y-auto flex md:flex-col gap-1">
+            <div className="w-full md:w-72 bg-slate-100/90 border-b md:border-b-0 md:border-r border-slate-200/90 p-3 shrink-0 overflow-x-auto md:overflow-y-auto flex md:flex-col gap-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -219,10 +258,10 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap md:whitespace-normal text-left cursor-pointer ${
+                    className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap md:whitespace-normal text-left cursor-pointer ${
                       isActive
-                        ? 'bg-[#0f4c81] text-white shadow-xs'
-                        : 'text-slate-700 hover:bg-slate-200/70'
+                        ? 'bg-gradient-to-r from-[#0f4c81] to-[#1d70b8] text-white shadow-[0_12px_24px_rgba(15,76,129,0.22)]'
+                        : 'text-slate-700 hover:bg-white hover:text-slate-900 border border-transparent hover:border-slate-200'
                     }`}
                   >
                     <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
@@ -233,12 +272,12 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
             </div>
 
             {/* Scrollable Content Body */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_rgba(248,250,252,0.96))]">
               {/* TAB 1: HERO & GENERAL */}
               {activeTab === 'hero' && (
                 <div className="space-y-6">
                   {/* Hero Background Images (Framer Motion Slides) */}
-                  <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                       <div>
                         <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
@@ -520,25 +559,8 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                     <button
                       type="button"
-                      onClick={() => {
-                        const newId = `service-${Date.now()}`;
-                        addService({
-                          id: newId,
-                          iconName: 'calculator',
-                          badge: { FR: 'Nouveau Service', EN: 'New Service' },
-                          title: { FR: 'Nouveau Service Conseil', EN: 'New Advisory Service' },
-                          description: {
-                            FR: 'Description détaillée de la nouvelle prestation comptable ou fiscale.',
-                            EN: 'Detailed description of this accounting or consulting offering.',
-                          },
-                          deliverables: {
-                            FR: ['Livrable 1 : Analyse préliminaire', 'Livrable 2 : Rapport exécutif'],
-                            EN: ['Deliverable 1: Preliminary analysis', 'Deliverable 2: Executive report'],
-                          },
-                        });
-                        showNotification();
-                      }}
-                      className="px-3.5 py-2 bg-[#0f4c81] hover:bg-[#1d70b8] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      onClick={openNewServiceModal}
+                      className="px-3.5 py-2 bg-[#0f4c81] hover:bg-[#1d70b8] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-[0_12px_30px_rgba(15,76,129,0.2)]"
                     >
                       <Plus className="w-4 h-4" />
                       <span>{currentLang === 'FR' ? 'Ajouter un service' : 'Add Service'}</span>
@@ -549,7 +571,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                     {services.map((service, index) => (
                       <div
                         key={service.id}
-                        className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-4"
+                        className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] space-y-4"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-[#0f4c81] bg-blue-100 px-2.5 py-1 rounded-lg">
@@ -758,7 +780,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                     {carouselSlides.map((slide, idx) => (
                       <div
                         key={slide.id}
-                        className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-4"
+                        className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] space-y-4"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-[#0f4c81] bg-blue-100 px-2.5 py-1 rounded-lg">
@@ -1098,7 +1120,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                     {testimonials.map((item, idx) => (
                       <div
                         key={item.id}
-                        className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-4"
+                        className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] space-y-4"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-[#0f4c81] bg-blue-100 px-2.5 py-1 rounded-lg">
@@ -1222,7 +1244,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                     {officeLocations.map((loc, idx) => (
                       <div
                         key={idx}
-                        className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-3"
+                        className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] space-y-3"
                       >
                         <h5 className="font-bold text-sm text-[#0f4c81]">
                           Bureau #{idx + 1} - {loc.city.FR}
@@ -1314,7 +1336,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {/* Export Card */}
-                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] flex flex-col justify-between">
                       <div>
                         <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#0f4c81] flex items-center justify-center mb-3">
                           <Download className="w-5 h-5" />
@@ -1336,7 +1358,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                     </div>
 
                     {/* Import Card */}
-                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] flex flex-col justify-between">
                       <div>
                         <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
                           <Upload className="w-5 h-5" />
@@ -1415,6 +1437,235 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
           </div>
         </motion.div>
       </div>
+
+      <AnimatePresence>
+        {isAddServiceModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              className="w-full max-w-2xl rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.26)] overflow-hidden"
+            >
+              <div className="bg-gradient-to-r from-slate-950 via-[#0b3557] to-[#0f4c81] px-5 py-4 text-white flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-white/10 border border-white/10">
+                    <Briefcase className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold">
+                      {currentLang === 'FR' ? 'Ajouter un nouveau service' : 'Add a new service'}
+                    </h3>
+                    <p className="text-xs text-slate-300">
+                      {currentLang === 'FR' ? 'Créez une fiche de service premium pour le site.' : 'Create a premium service card for the website.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddServiceModalOpen(false)}
+                  className="p-2 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-5 sm:p-6 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-700 mb-1">
+                      {currentLang === 'FR' ? 'Badge FR' : 'Badge FR'}
+                    </label>
+                    <input
+                      type="text"
+                      value={serviceDraft.badge?.FR || ''}
+                      onChange={(e) =>
+                        setServiceDraft({
+                          ...serviceDraft,
+                          badge: { ...serviceDraft.badge, FR: e.target.value },
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-700 mb-1">
+                      {currentLang === 'FR' ? 'Badge EN' : 'Badge EN'}
+                    </label>
+                    <input
+                      type="text"
+                      value={serviceDraft.badge?.EN || ''}
+                      onChange={(e) =>
+                        setServiceDraft({
+                          ...serviceDraft,
+                          badge: { ...serviceDraft.badge, EN: e.target.value },
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-700 mb-1">
+                      {currentLang === 'FR' ? 'Titre FR' : 'Title FR'}
+                    </label>
+                    <input
+                      type="text"
+                      value={serviceDraft.title.FR}
+                      onChange={(e) =>
+                        setServiceDraft({
+                          ...serviceDraft,
+                          title: { ...serviceDraft.title, FR: e.target.value },
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-700 mb-1">
+                      {currentLang === 'FR' ? 'Titre EN' : 'Title EN'}
+                    </label>
+                    <input
+                      type="text"
+                      value={serviceDraft.title.EN}
+                      onChange={(e) =>
+                        setServiceDraft({
+                          ...serviceDraft,
+                          title: { ...serviceDraft.title, EN: e.target.value },
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-700 mb-1">
+                      {currentLang === 'FR' ? 'Description FR' : 'Description FR'}
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={serviceDraft.description.FR}
+                      onChange={(e) =>
+                        setServiceDraft({
+                          ...serviceDraft,
+                          description: { ...serviceDraft.description, FR: e.target.value },
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-700 mb-1">
+                      {currentLang === 'FR' ? 'Description EN' : 'Description EN'}
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={serviceDraft.description.EN}
+                      onChange={(e) =>
+                        setServiceDraft({
+                          ...serviceDraft,
+                          description: { ...serviceDraft.description, EN: e.target.value },
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-700 mb-1">
+                      {currentLang === 'FR' ? 'Livrables FR' : 'Deliverables FR'}
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={(serviceDraft.deliverables.FR || []).join('\n')}
+                      onChange={(e) =>
+                        setServiceDraft({
+                          ...serviceDraft,
+                          deliverables: {
+                            ...serviceDraft.deliverables,
+                            FR: e.target.value.split('\n').map((line) => line.trim()).filter(Boolean),
+                          },
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-700 mb-1">
+                      {currentLang === 'FR' ? 'Livrables EN' : 'Deliverables EN'}
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={(serviceDraft.deliverables.EN || []).join('\n')}
+                      onChange={(e) =>
+                        setServiceDraft({
+                          ...serviceDraft,
+                          deliverables: {
+                            ...serviceDraft.deliverables,
+                            EN: e.target.value.split('\n').map((line) => line.trim()).filter(Boolean),
+                          },
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-700 mb-1">
+                    {currentLang === 'FR' ? 'Icône' : 'Icon'}
+                  </label>
+                  <select
+                    value={serviceDraft.iconName}
+                    onChange={(e) =>
+                      setServiceDraft({
+                        ...serviceDraft,
+                        iconName: e.target.value as ServiceItem['iconName'],
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none bg-white"
+                  >
+                    <option value="calculator">Calculator</option>
+                    <option value="file-spreadsheet">Spreadsheet</option>
+                    <option value="shield-check">Shield</option>
+                    <option value="trending-up">Growth</option>
+                    <option value="book-open">Book</option>
+                    <option value="award">Award</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddServiceModalOpen(false)}
+                    className="px-4 py-2 text-sm font-semibold rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
+                  >
+                    {currentLang === 'FR' ? 'Annuler' : 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveNewService}
+                    className="px-4 py-2 text-sm font-bold rounded-xl bg-[#0f4c81] hover:bg-[#1d70b8] text-white shadow-[0_12px_24px_rgba(15,76,129,0.2)] transition-colors"
+                  >
+                    {currentLang === 'FR' ? 'Enregistrer le service' : 'Save service'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AnimatePresence>
   );
 }
@@ -1437,7 +1688,7 @@ function BilingualField({ label, valFR, valEN, isTextarea, onSave }: BilingualFi
   if (en !== valEN && en === '') setEn(valEN);
 
   return (
-    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+    <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-[0_6px_18px_rgba(15,23,42,0.03)] space-y-2.5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-800">{label}</span>
         {(fr !== valFR || en !== valEN) && (

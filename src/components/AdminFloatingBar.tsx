@@ -38,7 +38,7 @@ export function AdminFloatingBar({ currentLang }: AdminFloatingBarProps) {
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 50, opacity: 0 }}
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[96%] max-w-4xl bg-slate-900/95 text-white backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/80 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[96%] max-w-4xl bg-slate-900/90 text-white backdrop-blur-xl rounded-2xl shadow-[0_22px_60px_rgba(15,23,42,0.38)] border border-white/10 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
     >
       {/* Left: Status & Current User */}
       <div className="flex items-center gap-2.5">
