@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Language,
   ServiceItem,
@@ -162,7 +162,6 @@ export interface CMSContentData {
 }
 
 interface CMSContextType {
-  // Auth & Security
   isAdmin: boolean;
   adminPassword: string;
   users: AdminUser[];
@@ -190,7 +189,6 @@ interface CMSContextType {
     newPass: string
   ) => Promise<{ success: boolean; message: string }>;
 
-  // Panel & In-line Edit Modals
   isAdminPanelOpen: boolean;
   setIsAdminPanelOpen: (open: boolean) => void;
   isLoginModalOpen: boolean;
@@ -201,7 +199,6 @@ interface CMSContextType {
   setQuickEditTarget: (target: QuickEditItem | null) => void;
   triggerQuickEdit: (key: string, label?: string) => void;
 
-  // Live content
   getTranslations: (lang: Language) => Record<string, string>;
   services: ServiceItem[];
   carouselSlides: CarouselSlide[];
@@ -211,7 +208,6 @@ interface CMSContextType {
   heroImages: string[];
   topBarSettings: TopBarSettings;
 
-  // Mutators
   updateText: (key: string, lang: Language, value: string) => void;
   updateTextBilingual: (key: string, frValue: string, enValue: string) => void;
   updateHeroBg: (newBg: string) => void;
@@ -239,7 +235,6 @@ interface CMSContextType {
   updateOfficeLocation: (index: number, location: OfficeLocation) => void;
   updateTopBarSettings: (updates: Partial<TopBarSettings>) => void;
 
-  // Persistence utilities
   exportBackup: () => void;
   importBackup: (jsonData: string) => boolean;
   resetToDefaults: () => void;
@@ -281,6 +276,9 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     const hasStoredCurrentUser = !!safeStorageGet(STORAGE_KEY_CURRENT_USER);
     return hasStoredAuth && hasStoredCurrentUser;
   });
+
+  // Track whether a TopBar upsert is in flight so remote loads don't clobber it
+  const topBarUpsertInFlightRef = useRef(false);
 
   const loadAdminUsers = useCallback(async () => {
     try {
@@ -441,81 +439,91 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   });
 
   const loadSupabaseContent = useCallback(async () => {
-  try {
-    const [
-      servicesResult,
-      slidesResult,
-      testimonialsResult,
-      officesResult,
-      translationsResult,
-      topBarResult,
-    ] = await Promise.all([
-      supabase.from('services').select('*').order('sort_order', { ascending: true }),
-      supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true }),
-      supabase.from('testimonials').select('*').order('sort_order', { ascending: true }),
-      supabase.from('office_locations').select('*').order('sort_order', { ascending: true }),
-      supabase.from('page_translations').select('*'),
-      supabase.from('site_settings').select('*').eq('id', 'top_bar').maybeSingle(),
-    ]);
+    try {
+      const [
+        servicesResult,
+        slidesResult,
+        testimonialsResult,
+        officesResult,
+        translationsResult,
+        topBarResult,
+      ] = await Promise.all([
+        supabase.from('services').select('*').order('sort_order', { ascending: true }),
+        supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true }),
+        supabase.from('testimonials').select('*').order('sort_order', { ascending: true }),
+        supabase.from('office_locations').select('*').order('sort_order', { ascending: true }),
+        supabase.from('page_translations').select('*'),
+        supabase.from('site_settings').select('*').eq('id', 'top_bar').maybeSingle(),
+      ]);
 
-    const remoteTopBar = mapTopBarSettingsRow(topBarResult.data);
-
-    const hasSupabaseData =
-      (servicesResult.data && servicesResult.data.length > 0) ||
-      (slidesResult.data && slidesResult.data.length > 0) ||
-      (testimonialsResult.data && testimonialsResult.data.length > 0) ||
-      (officesResult.data && officesResult.data.length > 0) ||
-      (translationsResult.data && translationsResult.data.length > 0) ||
-      !!remoteTopBar;
-
-    if (!hasSupabaseData) return;
-
-    setContent((prevContent) => {
-      const nextContent: CMSContentData = {
-        translationsOverride: {
-          FR: translationsResult.data
-            ? mapTranslationRowsToObject(translationsResult.data, 'FR')
-            : prevContent.translationsOverride.FR,
-          EN: translationsResult.data
-            ? mapTranslationRowsToObject(translationsResult.data, 'EN')
-            : prevContent.translationsOverride.EN,
-        },
-        services: servicesResult.data?.length
-          ? servicesResult.data.map(mapServiceRow)
-          : prevContent.services,
-        carouselSlides: slidesResult.data?.length
-          ? slidesResult.data.map(mapCarouselRow)
-          : prevContent.carouselSlides,
-        testimonials: testimonialsResult.data?.length
-          ? testimonialsResult.data.map(mapTestimonialRow).map(normalizeTestimonialStatus)
-          : prevContent.testimonials,
-        officeLocations: officesResult.data?.length
-          ? officesResult.data.map(mapOfficeLocationRow)
-          : prevContent.officeLocations,
-        heroBg: prevContent.heroBg || DEFAULT_HERO_BG,
-        heroImages:
-          prevContent.heroImages && prevContent.heroImages.length > 0
-            ? prevContent.heroImages
-            : DEFAULT_HERO_SLIDES,
-        // Supabase value wins if the row exists; else keep local
-        topBarSettings: remoteTopBar
-          ? normalizeTopBarSettings(remoteTopBar)
-          : prevContent.topBarSettings,
-      };
-
-      try {
-        safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(nextContent));
-      } catch (error) {
-        console.error('Failed to persist Supabase CMS content locally:', error);
+      if (topBarResult.error) {
+        console.warn(
+          'site_settings fetch failed (did you create the table?):',
+          topBarResult.error.message
+        );
       }
 
-      return nextContent;
-    });
-  } catch (error) {
-    console.error('Failed to load CMS content from Supabase:', error);
-  }
-}, []);
- 
+      const remoteTopBar = mapTopBarSettingsRow(topBarResult.data);
+
+      // IMPORTANT: if the admin just made an edit and the upsert is still in flight,
+      // do NOT overwrite local state with stale remote data on this cycle.
+      const upsertInFlight = topBarUpsertInFlightRef.current;
+
+      const hasSupabaseData =
+        (servicesResult.data && servicesResult.data.length > 0) ||
+        (slidesResult.data && slidesResult.data.length > 0) ||
+        (testimonialsResult.data && testimonialsResult.data.length > 0) ||
+        (officesResult.data && officesResult.data.length > 0) ||
+        (translationsResult.data && translationsResult.data.length > 0) ||
+        !!remoteTopBar;
+
+      if (!hasSupabaseData) return;
+
+      setContent((prevContent) => {
+        const nextContent: CMSContentData = {
+          translationsOverride: {
+            FR: translationsResult.data
+              ? mapTranslationRowsToObject(translationsResult.data, 'FR')
+              : prevContent.translationsOverride.FR,
+            EN: translationsResult.data
+              ? mapTranslationRowsToObject(translationsResult.data, 'EN')
+              : prevContent.translationsOverride.EN,
+          },
+          services: servicesResult.data?.length
+            ? servicesResult.data.map(mapServiceRow)
+            : prevContent.services,
+          carouselSlides: slidesResult.data?.length
+            ? slidesResult.data.map(mapCarouselRow)
+            : prevContent.carouselSlides,
+          testimonials: testimonialsResult.data?.length
+            ? testimonialsResult.data.map(mapTestimonialRow).map(normalizeTestimonialStatus)
+            : prevContent.testimonials,
+          officeLocations: officesResult.data?.length
+            ? officesResult.data.map(mapOfficeLocationRow)
+            : prevContent.officeLocations,
+          heroBg: prevContent.heroBg || DEFAULT_HERO_BG,
+          heroImages:
+            prevContent.heroImages && prevContent.heroImages.length > 0
+              ? prevContent.heroImages
+              : DEFAULT_HERO_SLIDES,
+          topBarSettings:
+            remoteTopBar && !upsertInFlight
+              ? normalizeTopBarSettings(remoteTopBar)
+              : prevContent.topBarSettings,
+        };
+
+        try {
+          safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(nextContent));
+        } catch (error) {
+          console.error('Failed to persist Supabase CMS content locally:', error);
+        }
+
+        return nextContent;
+      });
+    } catch (error) {
+      console.error('Failed to load CMS content from Supabase:', error);
+    }
+  }, []);
 
   useEffect(() => {
     void loadSupabaseContent();
@@ -971,6 +979,24 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         },
       };
       saveContent(updated);
+
+      // Persist bilingual translation to Supabase page_translations (best effort)
+      void (async () => {
+        try {
+          const rows = [
+            { key, locale: 'FR', value: frValue },
+            { key, locale: 'EN', value: enValue },
+          ];
+          const { error } = await supabase
+            .from('page_translations')
+            .upsert(rows, { onConflict: 'key,locale' });
+          if (error) {
+            console.warn('page_translations upsert failed:', error.message);
+          }
+        } catch (err) {
+          console.warn('page_translations upsert threw:', err);
+        }
+      })();
     },
     [content, saveContent]
   );
@@ -1193,41 +1219,49 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateTopBarSettings = useCallback(
-  (updates: Partial<TopBarSettings>) => {
-    const nextSettings = normalizeTopBarSettings({
-      ...content.topBarSettings,
-      ...updates,
-    });
+    (updates: Partial<TopBarSettings>) => {
+      const nextSettings = normalizeTopBarSettings({
+        ...content.topBarSettings,
+        ...updates,
+      });
 
-    saveContent({
-      ...content,
-      topBarSettings: nextSettings,
-    });
+      // 1) Update local state immediately (optimistic)
+      saveContent({
+        ...content,
+        topBarSettings: nextSettings,
+      });
 
-    // Persist to Supabase (fire-and-forget with error log)
-    void (async () => {
-      try {
-        const { error } = await supabase
-          .from('site_settings')
-          .upsert(
-            {
-              id: 'top_bar',
-              value: nextSettings,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'id' }
-          );
+      // 2) Push to Supabase in the background
+      topBarUpsertInFlightRef.current = true;
+      void (async () => {
+        try {
+          const { error } = await supabase
+            .from('site_settings')
+            .upsert(
+              {
+                id: 'top_bar',
+                value: nextSettings,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'id' }
+            );
 
-        if (error) {
-          console.error('Failed to upsert site_settings.top_bar:', error);
+          if (error) {
+            console.error(
+              'Failed to upsert site_settings.top_bar:',
+              error.message,
+              '— did you create the site_settings table and RLS policies?'
+            );
+          }
+        } catch (err) {
+          console.error('Failed to persist TopBar settings to Supabase:', err);
+        } finally {
+          topBarUpsertInFlightRef.current = false;
         }
-      } catch (err) {
-        console.error('Failed to persist TopBar settings to Supabase:', err);
-      }
-    })();
-  },
-  [content, saveContent]
-);
+      })();
+    },
+    [content, saveContent]
+  );
 
   const exportBackup = useCallback(() => {
     const jsonStr = JSON.stringify(content, null, 2);

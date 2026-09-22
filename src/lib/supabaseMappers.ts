@@ -242,7 +242,11 @@ export const mapAdminUserToRow = (user: AdminUser) => ({
   last_login: user.lastLogin ?? null,
 });
 
-export const mapTopBarSettingsRow = (row: Record<string, any> | null | undefined): Record<string, any> | null => {
+
+
+export const mapTopBarSettingsRow = (
+  row: Record<string, any> | null | undefined
+): Record<string, any> | null => {
   if (!row || typeof row.value !== 'object' || row.value === null) return null;
   return row.value as Record<string, any>;
 };
