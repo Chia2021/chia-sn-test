@@ -61,9 +61,10 @@ const safeStorageRemove = (key: string) => {
 };
 
 const normalizeTestimonialStatus = (item: TestimonialItem): TestimonialItem => {
-  const safeStatus = item.status === 'pending' || item.status === 'rejected' || item.status === 'published'
-    ? item.status
-    : 'published';
+  const safeStatus: TestimonialItem['status'] =
+    item.status === 'pending' || item.status === 'rejected' || item.status === 'published'
+      ? item.status
+      : 'published';
 
   return {
     ...item,
@@ -355,7 +356,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
           services: parsed.services?.length ? parsed.services : defaultServices,
           carouselSlides: parsed.carouselSlides?.length ? parsed.carouselSlides : defaultSlides,
           testimonials: parsed.testimonials?.length
-            ? parsed.testimonials.map(normalizeTestimonialStatus)
+            ? (parsed.testimonials as TestimonialItem[]).map(normalizeTestimonialStatus)
             : defaultTestimonials.map(normalizeTestimonialStatus),
           officeLocations: parsed.officeLocations?.length ? parsed.officeLocations : defaultOffices,
           heroBg: heroBgVal,
@@ -1029,7 +1030,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   const approveTestimonial = useCallback(
     (testiId: string) => {
       const updated = content.testimonials.map((t) =>
-        t.id === testiId ? { ...t, status: 'published', submittedAt: t.submittedAt || new Date().toISOString() } : t
+        t.id === testiId ? { ...t, status: 'published' as const, submittedAt: t.submittedAt || new Date().toISOString() } : t
       );
       saveContent({ ...content, testimonials: updated });
     },
@@ -1039,7 +1040,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   const rejectTestimonial = useCallback(
     (testiId: string) => {
       const updated = content.testimonials.map((t) =>
-        t.id === testiId ? { ...t, status: 'rejected', submittedAt: t.submittedAt || new Date().toISOString() } : t
+        t.id === testiId ? { ...t, status: 'rejected' as const, submittedAt: t.submittedAt || new Date().toISOString() } : t
       );
       saveContent({ ...content, testimonials: updated });
     },
@@ -1104,12 +1105,16 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
             FR: parsed.translationsOverride?.FR || {},
             EN: parsed.translationsOverride?.EN || {},
           },
-          services: parsed.services?.length ? parsed.services : defaultServices,
-          carouselSlides: parsed.carouselSlides?.length ? parsed.carouselSlides : defaultSlides,
+          services: parsed.services?.length ? (parsed.services as ServiceItem[]) : defaultServices,
+          carouselSlides: parsed.carouselSlides?.length
+            ? (parsed.carouselSlides as CarouselSlide[])
+            : defaultSlides,
           testimonials: parsed.testimonials?.length
-            ? parsed.testimonials.map(normalizeTestimonialStatus)
+            ? (parsed.testimonials as TestimonialItem[]).map(normalizeTestimonialStatus)
             : defaultTestimonials.map(normalizeTestimonialStatus),
-          officeLocations: parsed.officeLocations?.length ? parsed.officeLocations : defaultOffices,
+          officeLocations: parsed.officeLocations?.length
+            ? (parsed.officeLocations as OfficeLocation[])
+            : defaultOffices,
           heroBg: heroBgVal,
           heroImages: heroImgs,
         };
@@ -1190,6 +1195,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         updateTestimonial,
         addTestimonial,
         approveTestimonial,
+        rejectTestimonial,
         submitClientTestimonial,
         deleteTestimonial,
         updateOfficeLocation,
