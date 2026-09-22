@@ -26,10 +26,9 @@ import {
   ShieldCheck,
   Users,
   Globe,
-  PanelTop,
 } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import { Language, ServiceItem, CarouselSlide, TestimonialItem, TopBarSettings } from '../types';
+import { Language, ServiceItem, CarouselSlide, TestimonialItem } from '../types';
 import { compressImageFile } from '../utils/imageUtils';
 import { UserManagementSection } from './admin/UserManagementSection';
 import { SEOManagementSection } from './admin/SEOManagementSection';
@@ -38,17 +37,7 @@ interface AdminPanelModalProps {
   currentLang: Language;
 }
 
-type TabType =
-  | 'topbar'
-  | 'hero'
-  | 'services'
-  | 'carousel'
-  | 'compliance'
-  | 'testimonials'
-  | 'contact'
-  | 'users'
-  | 'seo'
-  | 'backup';
+type TabType = 'hero' | 'services' | 'carousel' | 'compliance' | 'testimonials' | 'contact' | 'users' | 'seo' | 'backup';
 
 export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
   const {
@@ -79,14 +68,12 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     updateHeroImages,
     addHeroImage,
     removeHeroImage,
-    topBarSettings,
-    updateTopBarSettings,
     exportBackup,
     importBackup,
     resetToDefaults,
   } = useCMS();
 
-  const [activeTab, setActiveTab] = useState<TabType>('topbar');
+  const [activeTab, setActiveTab] = useState<TabType>('hero');
   const [saveSuccessNotice, setSaveSuccessNotice] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [customHeroUrl, setCustomHeroUrl] = useState('');
@@ -122,10 +109,9 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
   const tFR = getTranslations('FR');
   const tEN = getTranslations('EN');
   const normalizedTestimonials = testimonials.map((item) => {
-    const safeStatus =
-      item.status === 'pending' || item.status === 'rejected' || item.status === 'published'
-        ? item.status
-        : 'published';
+    const safeStatus = item.status === 'pending' || item.status === 'rejected' || item.status === 'published'
+      ? item.status
+      : 'published';
 
     return {
       ...item,
@@ -155,10 +141,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     } catch (err: any) {
       showNotice(
         currentLang === 'FR' ? 'Erreur d’image' : 'Image error',
-        err.message ||
-          (currentLang === 'FR'
-            ? "Erreur lors du traitement de l'image."
-            : 'Error while processing the image.'),
+        err.message || (currentLang === 'FR' ? 'Erreur lors du traitement de l\'image.' : 'Error while processing the image.'),
         'error'
       );
     } finally {
@@ -176,10 +159,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     } catch (err: any) {
       showNotice(
         currentLang === 'FR' ? 'Erreur d’image' : 'Image error',
-        err.message ||
-          (currentLang === 'FR'
-            ? "Erreur lors du traitement de l'image."
-            : 'Error while processing the image.'),
+        err.message || (currentLang === 'FR' ? 'Erreur lors du traitement de l\'image.' : 'Error while processing the image.'),
         'error'
       );
     } finally {
@@ -200,9 +180,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
           showNotification();
           showNotice(
             currentLang === 'FR' ? 'Importation réussie' : 'Import successful',
-            currentLang === 'FR'
-              ? 'Contenu importé avec succès !'
-              : 'Content imported successfully!',
+            currentLang === 'FR' ? 'Contenu importé avec succès !' : 'Content imported successfully!',
             'success'
           );
         } else {
@@ -219,56 +197,15 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
   };
 
   const tabs: { id: TabType; label: string; icon: any }[] = [
-    {
-      id: 'topbar',
-      label: currentLang === 'FR' ? 'Barre Supérieure' : 'Top Bar',
-      icon: PanelTop,
-    },
-    {
-      id: 'hero',
-      label: currentLang === 'FR' ? 'Hero & Textes Accueil' : 'Hero & Homepage',
-      icon: Type,
-    },
-    {
-      id: 'services',
-      label: currentLang === 'FR' ? 'Services & Livrables' : 'Services & Offerings',
-      icon: Briefcase,
-    },
-    {
-      id: 'carousel',
-      label: currentLang === 'FR' ? 'Carrousel & Photos' : 'Carousel & Media',
-      icon: ImageIcon,
-    },
-    {
-      id: 'compliance',
-      label: currentLang === 'FR' ? 'Cadre Réglementaire' : 'Compliance & Norms',
-      icon: ShieldCheck,
-    },
-    {
-      id: 'testimonials',
-      label: currentLang === 'FR' ? 'Avis Clients & Stats' : 'Testimonials & Reviews',
-      icon: Award,
-    },
-    {
-      id: 'contact',
-      label: currentLang === 'FR' ? 'Bureaux & Contact' : 'Offices & Contact',
-      icon: MapPin,
-    },
-    {
-      id: 'users',
-      label: currentLang === 'FR' ? 'Utilisateurs & Sécurité' : 'Users & Security',
-      icon: Users,
-    },
-    {
-      id: 'seo',
-      label: currentLang === 'FR' ? 'Référencement & SEO' : 'SEO & Visibility',
-      icon: Globe,
-    },
-    {
-      id: 'backup',
-      label: currentLang === 'FR' ? 'Sauvegarde & Import' : 'Backup & Restore',
-      icon: Download,
-    },
+    { id: 'hero', label: currentLang === 'FR' ? 'Hero & Textes Accueil' : 'Hero & Homepage', icon: Type },
+    { id: 'services', label: currentLang === 'FR' ? 'Services & Livrables' : 'Services & Offerings', icon: Briefcase },
+    { id: 'carousel', label: currentLang === 'FR' ? 'Carrousel & Photos' : 'Carousel & Media', icon: ImageIcon },
+    { id: 'compliance', label: currentLang === 'FR' ? 'Cadre Réglementaire' : 'Compliance & Norms', icon: ShieldCheck },
+    { id: 'testimonials', label: currentLang === 'FR' ? 'Avis Clients & Stats' : 'Testimonials & Reviews', icon: Award },
+    { id: 'contact', label: currentLang === 'FR' ? 'Bureaux & Contact' : 'Offices & Contact', icon: MapPin },
+    { id: 'users', label: currentLang === 'FR' ? 'Utilisateurs & Sécurité' : 'Users & Security', icon: Users },
+    { id: 'seo', label: currentLang === 'FR' ? 'Référencement & SEO' : 'SEO & Visibility', icon: Globe },
+    { id: 'backup', label: currentLang === 'FR' ? 'Sauvegarde & Import' : 'Backup & Restore', icon: Download },
   ];
 
   const openNewServiceModal = () => {
@@ -289,12 +226,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     setIsAddServiceModalOpen(true);
   };
 
-  const requestConfirm = (
-    title: string,
-    message: string,
-    onConfirm: () => void,
-    variant: 'danger' | 'default' = 'default'
-  ) => {
+  const requestConfirm = (title: string, message: string, onConfirm: () => void, variant: 'danger' | 'default' = 'default') => {
     setConfirmAction({ title, message, onConfirm, variant });
   };
 
@@ -305,11 +237,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     onConfirm();
   };
 
-  const showNotice = (
-    title: string,
-    message: string,
-    variant: 'success' | 'error' | 'info' = 'success'
-  ) => {
+  const showNotice = (title: string, message: string, variant: 'success' | 'error' | 'info' = 'success') => {
     setNoticeModal({ title, message, variant });
   };
 
@@ -319,14 +247,10 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     showNotification();
   };
 
-  const handleTopBarToggle = (key: keyof TopBarSettings, value: boolean) => {
-    updateTopBarSettings({ [key]: value } as Partial<TopBarSettings>);
-    showNotification();
-  };
-
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+        {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -335,12 +259,14 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer"
         />
 
+        {/* Panel Container */}
         <motion.div
           initial={{ opacity: 0, scale: 0.97, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: 15 }}
           className="relative w-full max-w-6xl bg-white/95 rounded-[28px] shadow-[0_30px_80px_rgba(15,23,42,0.22)] border border-slate-200/80 overflow-hidden z-10 my-6 flex flex-col max-h-[90vh] backdrop-blur-xl"
         >
+          {/* Top Bar */}
           <div className="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-950 via-[#0b3557] to-[#0f4c81] text-white flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               <div className="p-2.5 bg-white/10 rounded-2xl text-white border border-white/10 shadow-inner shadow-white/5">
@@ -348,11 +274,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
               </div>
               <div className="min-w-0">
                 <h3 className="font-bold text-base sm:text-lg flex items-center flex-wrap gap-2">
-                  <span>
-                    {currentLang === 'FR'
-                      ? 'Panneau Administrateur CMS'
-                      : 'Admin CMS Control Center'}
-                  </span>
+                  <span>{currentLang === 'FR' ? 'Panneau Administrateur CMS' : 'Admin CMS Control Center'}</span>
                   <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     En direct
                   </span>
@@ -389,7 +311,9 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
             </div>
           </div>
 
+          {/* Main Layout: Tabs + Content */}
           <div className="flex flex-col md:flex-row flex-1 overflow-hidden bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100">
+            {/* Sidebar Navigation */}
             <div className="w-full md:w-72 bg-slate-100/90 border-b md:border-b-0 md:border-r border-slate-200/90 p-3 shrink-0 overflow-x-auto md:overflow-y-auto flex md:flex-col gap-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -405,312 +329,25 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                         : 'text-slate-700 hover:bg-white hover:text-slate-900 border border-transparent hover:border-slate-200'
                     }`}
                   >
-                    <Icon
-                      className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`}
-                    />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
                     <span>{tab.label}</span>
                   </button>
                 );
               })}
             </div>
 
+            {/* Scrollable Content Body */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_rgba(248,250,252,0.96))]">
-              {/* TAB 0: TOP BAR */}
-              {activeTab === 'topbar' && (
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                      <PanelTop className="w-4 h-4 text-[#0f4c81]" />
-                      <span>
-                        {currentLang === 'FR'
-                          ? 'Barre Supérieure (Contact & Réseaux)'
-                          : 'Top Bar (Contact & Social)'}
-                      </span>
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {currentLang === 'FR'
-                        ? 'Modifiez les coordonnées, liens sociaux et la visibilité des éléments de la barre tout en haut du site.'
-                        : 'Edit contact details, social links, and visibility of elements in the very top bar.'}
-                    </p>
-                  </div>
-
-                  {/* Contact details */}
-                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)] space-y-3">
-                    <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500">
-                      {currentLang === 'FR' ? 'Coordonnées' : 'Contact Details'}
-                    </h5>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          {currentLang === 'FR'
-                            ? 'Adresse email de contact'
-                            : 'Contact email address'}
-                        </label>
-                        <input
-                          type="email"
-                          value={topBarSettings.emailAddress}
-                          onChange={(e) => {
-                            updateTopBarSettings({ emailAddress: e.target.value });
-                            showNotification();
-                          }}
-                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-[#0f4c81] outline-none"
-                          placeholder="contact@chia-sn.cm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          {currentLang === 'FR'
-                            ? 'Numéro de téléphone (format affiché)'
-                            : 'Phone number (displayed format)'}
-                        </label>
-                        <input
-                          type="tel"
-                          value={topBarSettings.phoneNumber}
-                          onChange={(e) => {
-                            updateTopBarSettings({ phoneNumber: e.target.value });
-                            showNotification();
-                          }}
-                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-[#0f4c81] outline-none"
-                          placeholder="+237 670 12 34 56"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          {currentLang === 'FR'
-                            ? 'Numéro WhatsApp (chiffres uniquement)'
-                            : 'WhatsApp number (digits only)'}
-                        </label>
-                        <input
-                          type="tel"
-                          value={topBarSettings.whatsappNumber}
-                          onChange={(e) => {
-                            updateTopBarSettings({ whatsappNumber: e.target.value });
-                            showNotification();
-                          }}
-                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-[#0f4c81] outline-none"
-                          placeholder="237670123456"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Social URLs */}
-                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)] space-y-3">
-                    <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500">
-                      {currentLang === 'FR' ? 'Liens des Réseaux Sociaux' : 'Social Media Links'}
-                    </h5>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          LinkedIn URL
-                        </label>
-                        <input
-                          type="url"
-                          value={topBarSettings.linkedinUrl}
-                          onChange={(e) => {
-                            updateTopBarSettings({ linkedinUrl: e.target.value });
-                            showNotification();
-                          }}
-                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-[#0f4c81] outline-none"
-                          placeholder="https://linkedin.com/company/chia-sn"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Facebook URL
-                        </label>
-                        <input
-                          type="url"
-                          value={topBarSettings.facebookUrl}
-                          onChange={(e) => {
-                            updateTopBarSettings({ facebookUrl: e.target.value });
-                            showNotification();
-                          }}
-                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-[#0f4c81] outline-none"
-                          placeholder="https://facebook.com/chiasn"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Visibility toggles */}
-                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)] space-y-3">
-                    <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500">
-                      {currentLang === 'FR' ? 'Visibilité des éléments' : 'Element Visibility'}
-                    </h5>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {(
-                        [
-                          ['showLinkedin', currentLang === 'FR' ? 'Afficher LinkedIn' : 'Show LinkedIn'],
-                          ['showFacebook', currentLang === 'FR' ? 'Afficher Facebook' : 'Show Facebook'],
-                          ['showWhatsapp', currentLang === 'FR' ? 'Afficher WhatsApp' : 'Show WhatsApp'],
-                          ['showHours', currentLang === 'FR' ? 'Afficher les horaires' : 'Show business hours'],
-                          [
-                            'showAdminButton',
-                            currentLang === 'FR' ? 'Afficher le bouton Admin' : 'Show Admin button',
-                          ],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <label
-                          key={key}
-                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-200 hover:border-[#0f4c81]/40 cursor-pointer bg-slate-50/60 hover:bg-white transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={topBarSettings[key]}
-                            onChange={(e) => handleTopBarToggle(key, e.target.checked)}
-                            className="w-4 h-4 accent-[#0f4c81] cursor-pointer"
-                          />
-                          <span className="text-xs font-semibold text-slate-700">{label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Editable labels via BilingualField */}
-                  <div className="space-y-4">
-                    <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500 pt-2 border-t">
-                      {currentLang === 'FR' ? 'Textes affichés dans la barre' : 'Displayed Labels'}
-                    </h5>
-
-                    <BilingualField
-                      label={currentLang === 'FR' ? 'Email affiché' : 'Displayed email'}
-                      valFR={tFR['top-email']}
-                      valEN={tEN['top-email']}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-email', fr, en);
-                        showNotification();
-                      }}
-                    />
-
-                    <BilingualField
-                      label={currentLang === 'FR' ? 'Téléphone affiché' : 'Displayed phone'}
-                      valFR={tFR['top-phone']}
-                      valEN={tEN['top-phone']}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-phone', fr, en);
-                        showNotification();
-                      }}
-                    />
-
-                    <BilingualField
-                      label={currentLang === 'FR' ? 'Horaires affichés' : 'Displayed hours'}
-                      valFR={tFR['top-hours']}
-                      valEN={tEN['top-hours']}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-hours', fr, en);
-                        showNotification();
-                      }}
-                    />
-
-                    <BilingualField
-                      label={
-                        currentLang === 'FR'
-                          ? 'Libellé bouton Admin (déconnecté)'
-                          : 'Admin button label (logged out)'
-                      }
-                      valFR={tFR['top-admin-btn-label'] ?? 'Admin'}
-                      valEN={tEN['top-admin-btn-label'] ?? 'Admin'}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-admin-btn-label', fr, en);
-                        showNotification();
-                      }}
-                    />
-
-                    <BilingualField
-                      label={
-                        currentLang === 'FR'
-                          ? 'Libellé bouton Admin (connecté)'
-                          : 'Admin button label (logged in)'
-                      }
-                      valFR={tFR['top-admin-btn-label-logged'] ?? 'Panneau CMS'}
-                      valEN={tEN['top-admin-btn-label-logged'] ?? 'CMS Panel'}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-admin-btn-label-logged', fr, en);
-                        showNotification();
-                      }}
-                    />
-
-                    <BilingualField
-                      label={
-                        currentLang === 'FR'
-                          ? 'Infobulle bouton Admin (déconnecté)'
-                          : 'Admin tooltip (logged out)'
-                      }
-                      valFR={tFR['top-admin-btn-tooltip'] ?? ''}
-                      valEN={tEN['top-admin-btn-tooltip'] ?? ''}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-admin-btn-tooltip', fr, en);
-                        showNotification();
-                      }}
-                    />
-
-                    <BilingualField
-                      label={
-                        currentLang === 'FR'
-                          ? 'Infobulle bouton Admin (connecté)'
-                          : 'Admin tooltip (logged in)'
-                      }
-                      valFR={tFR['top-admin-btn-tooltip-logged'] ?? ''}
-                      valEN={tEN['top-admin-btn-tooltip-logged'] ?? ''}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-admin-btn-tooltip-logged', fr, en);
-                        showNotification();
-                      }}
-                    />
-
-                    <BilingualField
-                      label={currentLang === 'FR' ? 'Aria-label LinkedIn' : 'LinkedIn aria-label'}
-                      valFR={tFR['top-aria-linkedin'] ?? ''}
-                      valEN={tEN['top-aria-linkedin'] ?? ''}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-aria-linkedin', fr, en);
-                        showNotification();
-                      }}
-                    />
-
-                    <BilingualField
-                      label={currentLang === 'FR' ? 'Aria-label Facebook' : 'Facebook aria-label'}
-                      valFR={tFR['top-aria-facebook'] ?? ''}
-                      valEN={tEN['top-aria-facebook'] ?? ''}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-aria-facebook', fr, en);
-                        showNotification();
-                      }}
-                    />
-
-                    <BilingualField
-                      label={currentLang === 'FR' ? 'Aria-label WhatsApp' : 'WhatsApp aria-label'}
-                      valFR={tFR['top-aria-whatsapp'] ?? ''}
-                      valEN={tEN['top-aria-whatsapp'] ?? ''}
-                      onSave={(fr, en) => {
-                        updateTextBilingual('top-aria-whatsapp', fr, en);
-                        showNotification();
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* TAB 1: HERO & GENERAL */}
               {activeTab === 'hero' && (
                 <div className="space-y-6">
+                  {/* Hero Background Images (Framer Motion Slides) */}
                   <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                       <div>
                         <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
                           <ImageIcon className="w-4 h-4 text-[#0f4c81]" />
-                          <span>
-                            {currentLang === 'FR'
-                              ? "Diaporama d'Arrière-Plan Hero (Framer Motion)"
-                              : 'Hero Background Slides (Framer Motion)'}
-                          </span>
+                          <span>{currentLang === 'FR' ? 'Diaporama d\'Arrière-Plan Hero (Framer Motion)' : 'Hero Background Slides (Framer Motion)'}</span>
                         </h4>
                         <p className="text-xs text-slate-500 mt-0.5">
                           {currentLang === 'FR'
@@ -723,14 +360,13 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       </span>
                     </div>
 
+                    {/* Slides Grid Preview */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                       {heroImages.map((imgUrl, idx) => (
                         <div
                           key={idx}
                           className={`relative rounded-xl overflow-hidden border-2 transition-all group aspect-video bg-slate-900 ${
-                            idx === 0
-                              ? 'border-amber-400 ring-2 ring-amber-400/30'
-                              : 'border-slate-300 hover:border-[#0f4c81]'
+                            idx === 0 ? 'border-amber-400 ring-2 ring-amber-400/30' : 'border-slate-300 hover:border-[#0f4c81]'
                           }`}
                         >
                           <img
@@ -741,11 +377,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-between p-2">
                             <div className="flex justify-between items-center">
                               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 text-white">
-                                {idx === 0
-                                  ? currentLang === 'FR'
-                                    ? '1 (Principal)'
-                                    : '1 (Main)'
-                                  : `#${idx + 1}`}
+                                {idx === 0 ? (currentLang === 'FR' ? '1 (Principal)' : '1 (Main)') : `#${idx + 1}`}
                               </span>
                               {heroImages.length > 1 && (
                                 <button
@@ -755,11 +387,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                                     showNotification();
                                   }}
                                   className="p-1 rounded-md bg-red-600/80 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                  title={
-                                    currentLang === 'FR'
-                                      ? 'Supprimer cette image'
-                                      : 'Remove image'
-                                  }
+                                  title={currentLang === 'FR' ? 'Supprimer cette image' : 'Remove image'}
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
@@ -782,6 +410,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       ))}
                     </div>
 
+                    {/* Upload and Add Controls */}
                     <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-slate-200">
                       <div className="flex flex-wrap gap-2 items-center">
                         <input
@@ -813,26 +442,21 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                               'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=2000&q=80',
                               'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2000&q=80',
                               'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=2000&q=80',
-                              'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=2000&q=80',
+                              'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=2000&q=80'
                             ]);
                             showNotification();
                           }}
                           className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
                         >
-                          {currentLang === 'FR'
-                            ? 'Restaurer diapos par défaut'
-                            : 'Reset default slides'}
+                          {currentLang === 'FR' ? 'Restaurer diapos par défaut' : 'Reset default slides'}
                         </button>
                       </div>
 
+                      {/* URL input */}
                       <div className="flex-1 flex items-center gap-2">
                         <input
                           type="url"
-                          placeholder={
-                            currentLang === 'FR'
-                              ? "Coller une URL d'image pour ajouter un slide..."
-                              : 'Paste image URL to add slide...'
-                          }
+                          placeholder={currentLang === 'FR' ? "Coller une URL d'image pour ajouter un slide..." : "Paste image URL to add slide..."}
                           value={customHeroUrl}
                           onChange={(e) => setCustomHeroUrl(e.target.value)}
                           className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
@@ -854,14 +478,14 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                     </div>
                   </div>
 
+                  {/* Hero Texts Form */}
                   <div className="space-y-4">
                     <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2 border-b pb-2">
                       <Type className="w-4 h-4 text-[#0f4c81]" />
-                      <span>
-                        {currentLang === 'FR' ? 'Titres & Textes du Hero' : 'Hero Titles & Subtitles'}
-                      </span>
+                      <span>{currentLang === 'FR' ? 'Titres & Textes du Hero' : 'Hero Titles & Subtitles'}</span>
                     </h4>
 
+                    {/* Badge */}
                     <BilingualField
                       label="Badge supérieur (Hero)"
                       valFR={tFR['hero-badge']}
@@ -872,6 +496,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       }}
                     />
 
+                    {/* Title Prefix, Highlight, Suffix */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <BilingualField
                         label="Titre : Préfixe"
@@ -902,6 +527,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       />
                     </div>
 
+                    {/* Description */}
                     <BilingualField
                       label="Description Principale (Sous-titre Hero)"
                       isTextarea
@@ -913,6 +539,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       }}
                     />
 
+                    {/* CTA Buttons */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <BilingualField
                         label="Bouton Principal (Jaune)"
@@ -934,6 +561,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       />
                     </div>
 
+                    {/* Stats metrics */}
                     <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500 pt-3">
                       Statistiques Clés (Barre Hero)
                     </h5>
@@ -985,9 +613,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-bold text-sm text-slate-900">
-                        {currentLang === 'FR'
-                          ? 'Gestion des Services Stratégiques'
-                          : 'Strategic Services Management'}
+                        {currentLang === 'FR' ? 'Gestion des Services Stratégiques' : 'Strategic Services Management'}
                       </h4>
                       <p className="text-xs text-slate-500">
                         {currentLang === 'FR'
@@ -1020,9 +646,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                             type="button"
                             onClick={() =>
                               requestConfirm(
-                                currentLang === 'FR'
-                                  ? 'Supprimer ce service ?'
-                                  : 'Delete this service?',
+                                currentLang === 'FR' ? 'Supprimer ce service ?' : 'Delete this service?',
                                 currentLang === 'FR'
                                   ? 'Cette action supprimera définitivement le service de la boutique en ligne. Continuer ?'
                                   : 'This action will permanently remove the service from the site. Continue?',
@@ -1041,6 +665,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </button>
                         </div>
 
+                        {/* Title FR & EN */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -1078,6 +703,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </div>
                         </div>
 
+                        {/* Badge FR & EN */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -1121,6 +747,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </div>
                         </div>
 
+                        {/* Description FR & EN */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -1158,6 +785,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </div>
                         </div>
 
+                        {/* Deliverables Bullet Points */}
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">
                             Livrables clés (1 par ligne - FR)
@@ -1188,9 +816,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-bold text-sm text-slate-900">
-                        {currentLang === 'FR'
-                          ? 'Carrousel & Téléversement de Photos'
-                          : 'Carousel & Photo Uploads'}
+                        {currentLang === 'FR' ? 'Carrousel & Téléversement de Photos' : 'Carousel & Photo Uploads'}
                       </h4>
                       <p className="text-xs text-slate-500">
                         {currentLang === 'FR'
@@ -1209,7 +835,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                             'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
                           title: { FR: 'Nouvelle Réalisation', EN: 'New Landmark Project' },
                           description: {
-                            FR: "Description de la mission d'audit ou d'accompagnement réalisée.",
+                            FR: 'Description de la mission d\'audit ou d\'accompagnement réalisée.',
                             EN: 'Description of the audit or strategic advisory mission delivered.',
                           },
                           tag: { FR: 'Expertise', EN: 'Expertise' },
@@ -1219,9 +845,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       className="px-3.5 py-2 bg-[#0f4c81] hover:bg-[#1d70b8] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
                       <Plus className="w-4 h-4" />
-                      <span>
-                        {currentLang === 'FR' ? 'Ajouter une diapositive' : 'Add Slide'}
-                      </span>
+                      <span>{currentLang === 'FR' ? 'Ajouter une diapositive' : 'Add Slide'}</span>
                     </button>
                   </div>
 
@@ -1239,9 +863,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                             type="button"
                             onClick={() =>
                               requestConfirm(
-                                currentLang === 'FR'
-                                  ? 'Supprimer cette diapositive ?'
-                                  : 'Delete this slide?',
+                                currentLang === 'FR' ? 'Supprimer cette diapositive ?' : 'Delete this slide?',
                                 currentLang === 'FR'
                                   ? 'La diapositive sera retirée du carrousel public. Continuer ?'
                                   : 'The slide will be removed from the public carousel. Continue?',
@@ -1259,6 +881,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </button>
                         </div>
 
+                        {/* Slide Image + Uploader */}
                         <div className="flex flex-col sm:flex-row gap-4 items-center">
                           <div className="relative w-full sm:w-56 h-32 rounded-xl overflow-hidden bg-slate-900 border border-slate-300 shrink-0">
                             <img
@@ -1270,9 +893,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                           <div className="flex-1 w-full space-y-2">
                             <label className="block text-xs font-bold text-slate-700">
-                              {currentLang === 'FR'
-                                ? "Changer l'image de la diapositive"
-                                : 'Change Slide Image'}
+                              {currentLang === 'FR' ? 'Changer l\'image de la diapositive' : 'Change Slide Image'}
                             </label>
 
                             <div className="flex flex-wrap items-center gap-2">
@@ -1291,11 +912,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0f4c81] hover:bg-[#1d70b8] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-xs"
                               >
                                 <Upload className="w-3.5 h-3.5" />
-                                <span>
-                                  {currentLang === 'FR'
-                                    ? 'Téléverser photo locale'
-                                    : 'Upload photo'}
-                                </span>
+                                <span>{currentLang === 'FR' ? 'Téléverser photo locale' : 'Upload photo'}</span>
                               </label>
 
                               <input
@@ -1304,10 +921,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                                 defaultValue={slide.image.startsWith('data:') ? '' : slide.image}
                                 onBlur={(e) => {
                                   if (e.target.value.trim()) {
-                                    updateCarouselSlide({
-                                      ...slide,
-                                      image: e.target.value.trim(),
-                                    });
+                                    updateCarouselSlide({ ...slide, image: e.target.value.trim() });
                                     showNotification();
                                   }
                                 }}
@@ -1317,6 +931,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </div>
                         </div>
 
+                        {/* Title FR / EN */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -1354,6 +969,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </div>
                         </div>
 
+                        {/* Tag FR / EN */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -1391,6 +1007,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           </div>
                         </div>
 
+                        {/* Description FR / EN */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -1438,9 +1055,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                 <div className="space-y-6">
                   <div>
                     <h4 className="font-bold text-sm text-slate-900">
-                      {currentLang === 'FR'
-                        ? 'Cadre Réglementaire & Normes'
-                        : 'Regulatory Framework & Standards'}
+                      {currentLang === 'FR' ? 'Cadre Réglementaire & Normes' : 'Regulatory Framework & Standards'}
                     </h4>
                     <p className="text-xs text-slate-500">
                       Modifiez les 4 cartes d'information réglementaire (OHADA, DGI, CGI, CNPS).
@@ -1542,9 +1157,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                 <div className="space-y-6">
                   <div>
                     <h4 className="font-bold text-sm text-slate-900">
-                      {currentLang === 'FR'
-                        ? 'Validation des témoignages clients'
-                        : 'Client testimonial moderation'}
+                      {currentLang === 'FR' ? 'Validation des témoignages clients' : 'Client testimonial moderation'}
                     </h4>
                     <p className="text-xs text-slate-500">
                       {currentLang === 'FR'
@@ -1561,10 +1174,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                       {pendingTestimonials.length > 0 ? (
                         pendingTestimonials.map((item, idx) => (
-                          <div
-                            key={item.id}
-                            className="bg-amber-50/80 p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-[0_10px_24px_rgba(180,83,9,0.06)] space-y-3"
-                          >
+                          <div key={item.id} className="bg-amber-50/80 p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-[0_10px_24px_rgba(180,83,9,0.06)] space-y-3">
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-900 bg-amber-100 px-2 py-1 rounded-lg">
@@ -1588,9 +1198,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                                   type="button"
                                   onClick={() =>
                                     requestConfirm(
-                                      currentLang === 'FR'
-                                        ? 'Rejeter cette soumission ?'
-                                        : 'Reject this submission?',
+                                      currentLang === 'FR' ? 'Rejeter cette soumission ?' : 'Reject this submission?',
                                       currentLang === 'FR'
                                         ? 'Le témoignage ne sera plus visible sur le site public. Continuer ?'
                                         : 'The testimonial will no longer be visible on the public website. Continue?',
@@ -1612,28 +1220,16 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               <div>
-                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">
-                                  Auteur
-                                </label>
-                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
-                                  {item.author}
-                                </div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Auteur</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.author}</div>
                               </div>
                               <div>
-                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">
-                                  E-mail
-                                </label>
-                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
-                                  {item.email || '—'}
-                                </div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">E-mail</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.email || '—'}</div>
                               </div>
                               <div>
-                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">
-                                  Entreprise
-                                </label>
-                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
-                                  {item.company}
-                                </div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Entreprise</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.company}</div>
                               </div>
                             </div>
 
@@ -1644,9 +1240,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                         ))
                       ) : (
                         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                          {currentLang === 'FR'
-                            ? 'Aucune soumission cliente en attente pour le moment.'
-                            : 'No customer submissions awaiting review.'}
+                          {currentLang === 'FR' ? 'Aucune soumission cliente en attente pour le moment.' : 'No customer submissions awaiting review.'}
                         </div>
                       )}
                     </div>
@@ -1658,10 +1252,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                       {approvedTestimonials.length > 0 ? (
                         approvedTestimonials.map((item, idx) => (
-                          <div
-                            key={item.id}
-                            className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] space-y-4"
-                          >
+                          <div key={item.id} className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] space-y-4">
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">
@@ -1673,9 +1264,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                                 type="button"
                                 onClick={() =>
                                   requestConfirm(
-                                    currentLang === 'FR'
-                                      ? 'Rejeter ce témoignage approuvé ?'
-                                      : 'Reject this approved testimonial?',
+                                    currentLang === 'FR' ? 'Rejeter ce témoignage approuvé ?' : 'Reject this approved testimonial?',
                                     currentLang === 'FR'
                                       ? 'Ce témoignage sera retiré de la page publique immédiatement. Continuer ?'
                                       : 'This testimonial will be removed from the public page immediately. Continue?',
@@ -1696,28 +1285,16 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               <div>
-                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">
-                                  Auteur
-                                </label>
-                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
-                                  {item.author}
-                                </div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Auteur</label>
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{item.author}</div>
                               </div>
                               <div>
-                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">
-                                  E-mail
-                                </label>
-                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
-                                  {item.email || '—'}
-                                </div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">E-mail</label>
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{item.email || '—'}</div>
                               </div>
                               <div>
-                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">
-                                  Entreprise
-                                </label>
-                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
-                                  {item.company}
-                                </div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Entreprise</label>
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{item.company}</div>
                               </div>
                             </div>
 
@@ -1728,9 +1305,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                         ))
                       ) : (
                         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                          {currentLang === 'FR'
-                            ? 'Aucun témoignage approuvé pour le moment.'
-                            : 'No approved testimonials yet.'}
+                          {currentLang === 'FR' ? 'Aucun témoignage approuvé pour le moment.' : 'No approved testimonials yet.'}
                         </div>
                       )}
                     </div>
@@ -1742,10 +1317,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                       {rejectedTestimonials.length > 0 ? (
                         rejectedTestimonials.map((item, idx) => (
-                          <div
-                            key={item.id}
-                            className="bg-rose-50/80 p-4 sm:p-5 rounded-2xl border border-rose-200 shadow-[0_10px_24px_rgba(190,24,93,0.06)] space-y-4"
-                          >
+                          <div key={item.id} className="bg-rose-50/80 p-4 sm:p-5 rounded-2xl border border-rose-200 shadow-[0_10px_24px_rgba(190,24,93,0.06)] space-y-4">
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-rose-700 bg-rose-100 px-2 py-1 rounded-lg">
@@ -1768,28 +1340,16 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               <div>
-                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">
-                                  Auteur
-                                </label>
-                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
-                                  {item.author}
-                                </div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Auteur</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.author}</div>
                               </div>
                               <div>
-                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">
-                                  E-mail
-                                </label>
-                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
-                                  {item.email || '—'}
-                                </div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">E-mail</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.email || '—'}</div>
                               </div>
                               <div>
-                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">
-                                  Entreprise
-                                </label>
-                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
-                                  {item.company}
-                                </div>
+                                <label className="block text-[10px] font-bold uppercase text-slate-600 mb-1">Entreprise</label>
+                                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">{item.company}</div>
                               </div>
                             </div>
 
@@ -1800,9 +1360,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                         ))
                       ) : (
                         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                          {currentLang === 'FR'
-                            ? 'Aucun témoignage rejeté pour le moment.'
-                            : 'No rejected testimonials yet.'}
+                          {currentLang === 'FR' ? 'Aucun témoignage rejeté pour le moment.' : 'No rejected testimonials yet.'}
                         </div>
                       )}
                     </div>
@@ -1815,9 +1373,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                 <div className="space-y-6">
                   <div>
                     <h4 className="font-bold text-sm text-slate-900">
-                      {currentLang === 'FR'
-                        ? 'Bureaux, Téléphones & Coordonnées'
-                        : 'Offices, Phone & Coordinates'}
+                      {currentLang === 'FR' ? 'Bureaux, Téléphones & Coordonnées' : 'Offices, Phone & Coordinates'}
                     </h4>
                     <p className="text-xs text-slate-500">
                       Modifiez les coordonnées affichées pour Douala, Yaoundé et le canal WhatsApp.
@@ -1911,17 +1467,15 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                 <div className="space-y-6">
                   <div>
                     <h4 className="font-bold text-sm text-slate-900">
-                      {currentLang === 'FR'
-                        ? 'Sauvegarde, Export & Réinitialisation'
-                        : 'Backup, Export & Factory Reset'}
+                      {currentLang === 'FR' ? 'Sauvegarde, Export & Réinitialisation' : 'Backup, Export & Factory Reset'}
                     </h4>
                     <p className="text-xs text-slate-500">
-                      Exportez l'intégralité du site (textes, images, services) sous forme de fichier
-                      JSON ou restaurez les paramètres d'usine.
+                      Exportez l'intégralité du site (textes, images, services) sous forme de fichier JSON ou restaurez les paramètres d'usine.
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Export Card */}
                     <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] flex flex-col justify-between">
                       <div>
                         <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#0f4c81] flex items-center justify-center mb-3">
@@ -1931,8 +1485,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           {currentLang === 'FR' ? 'Exporter en JSON' : 'Export JSON'}
                         </h5>
                         <p className="text-xs text-slate-600 mb-4">
-                          Téléchargez un fichier de sauvegarde complet contenant toutes vos
-                          modifications.
+                          Téléchargez un fichier de sauvegarde complet contenant toutes vos modifications.
                         </p>
                       </div>
                       <button
@@ -1944,6 +1497,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       </button>
                     </div>
 
+                    {/* Import Card */}
                     <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-[0_10px_24px_rgba(15,23,42,0.04)] flex flex-col justify-between">
                       <div>
                         <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
@@ -1953,8 +1507,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           {currentLang === 'FR' ? 'Importer un JSON' : 'Import JSON'}
                         </h5>
                         <p className="text-xs text-slate-600 mb-4">
-                          Chargez un fichier de sauvegarde précédemment exporté pour restaurer le
-                          site.
+                          Chargez un fichier de sauvegarde précédemment exporté pour restaurer le site.
                         </p>
                       </div>
 
@@ -1976,6 +1529,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       </div>
                     </div>
 
+                    {/* Factory Reset Card */}
                     <div className="bg-red-50/50 p-5 rounded-2xl border border-red-200 flex flex-col justify-between">
                       <div>
                         <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-3">
@@ -1985,8 +1539,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           {currentLang === 'FR' ? 'Réinitialiser' : 'Factory Reset'}
                         </h5>
                         <p className="text-xs text-red-700/80 mb-4">
-                          Supprime toutes les modifications personnalisées et restaure le contenu
-                          d'origine.
+                          Supprime toutes les modifications personnalisées et restaure le contenu d'origine.
                         </p>
                       </div>
 
@@ -1994,9 +1547,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                         type="button"
                         onClick={() =>
                           requestConfirm(
-                            currentLang === 'FR'
-                              ? 'Réinitialiser le contenu ?'
-                              : 'Reset the content?',
+                            currentLang === 'FR' ? 'Réinitialiser le contenu ?' : 'Reset the content?',
                             currentLang === 'FR'
                               ? 'Attention : cette action effacera toutes vos modifications personnalisées et restaurera le contenu d’origine. Continuer ?'
                               : 'Warning: this action will clear all custom edits and restore the original content. Continue?',
@@ -2010,9 +1561,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                         }
                         className="w-full py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
                       >
-                        {currentLang === 'FR'
-                          ? "Réinitialiser aux valeurs d'origine"
-                          : 'Reset to Defaults'}
+                        {currentLang === 'FR' ? 'Réinitialiser aux valeurs d\'origine' : 'Reset to Defaults'}
                       </button>
                     </div>
                   </div>
@@ -2020,10 +1569,14 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
               )}
 
               {/* TAB 8: USERS & SECURITY */}
-              {activeTab === 'users' && <UserManagementSection currentLang={currentLang} />}
+              {activeTab === 'users' && (
+                <UserManagementSection currentLang={currentLang} />
+              )}
 
               {/* TAB 9: SEO & VISIBILITY */}
-              {activeTab === 'seo' && <SEOManagementSection currentLang={currentLang} />}
+              {activeTab === 'seo' && (
+                <SEOManagementSection currentLang={currentLang} />
+              )}
             </div>
           </div>
         </motion.div>
@@ -2043,30 +1596,22 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
               exit={{ opacity: 0, y: 12, scale: 0.98 }}
               className="w-full max-w-md rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] overflow-hidden"
             >
-              <div
-                className={`px-5 py-4 border-b ${
-                  noticeModal.variant === 'error'
-                    ? 'border-red-100 bg-red-50'
-                    : noticeModal.variant === 'success'
+              <div className={`px-5 py-4 border-b ${
+                noticeModal.variant === 'error'
+                  ? 'border-red-100 bg-red-50'
+                  : noticeModal.variant === 'success'
                     ? 'border-emerald-100 bg-emerald-50'
                     : 'border-slate-200 bg-slate-50'
-                }`}
-              >
+              }`}>
                 <div className="flex items-start gap-3">
-                  <div
-                    className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${
-                      noticeModal.variant === 'error'
-                        ? 'bg-red-100 text-red-600'
-                        : noticeModal.variant === 'success'
+                  <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${
+                    noticeModal.variant === 'error'
+                      ? 'bg-red-100 text-red-600'
+                      : noticeModal.variant === 'success'
                         ? 'bg-emerald-100 text-emerald-600'
                         : 'bg-slate-100 text-slate-700'
-                    }`}
-                  >
-                    {noticeModal.variant === 'error' ? (
-                      <AlertCircle className="w-5 h-5" />
-                    ) : (
-                      <CheckCircle2 className="w-5 h-5" />
-                    )}
+                  }`}>
+                    {noticeModal.variant === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-slate-900">{noticeModal.title}</h3>
@@ -2101,26 +1646,10 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
               exit={{ opacity: 0, y: 12, scale: 0.98 }}
               className="w-full max-w-md rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.26)] overflow-hidden"
             >
-              <div
-                className={`px-5 py-4 border-b ${
-                  confirmAction.variant === 'danger'
-                    ? 'border-red-100 bg-red-50'
-                    : 'border-slate-200 bg-slate-50'
-                }`}
-              >
+              <div className={`px-5 py-4 border-b ${confirmAction.variant === 'danger' ? 'border-red-100 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
                 <div className="flex items-start gap-3">
-                  <div
-                    className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${
-                      confirmAction.variant === 'danger'
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-slate-100 text-slate-700'
-                    }`}
-                  >
-                    {confirmAction.variant === 'danger' ? (
-                      <AlertCircle className="w-5 h-5" />
-                    ) : (
-                      <ShieldCheck className="w-5 h-5" />
-                    )}
+                  <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${confirmAction.variant === 'danger' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-700'}`}>
+                    {confirmAction.variant === 'danger' ? <AlertCircle className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-slate-900">{confirmAction.title}</h3>
@@ -2180,9 +1709,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       {currentLang === 'FR' ? 'Ajouter un nouveau service' : 'Add a new service'}
                     </h3>
                     <p className="text-xs text-slate-300">
-                      {currentLang === 'FR'
-                        ? 'Créez une fiche de service premium pour le site.'
-                        : 'Create a premium service card for the website.'}
+                      {currentLang === 'FR' ? 'Créez une fiche de service premium pour le site.' : 'Create a premium service card for the website.'}
                     </p>
                   </div>
                 </div>
@@ -2207,10 +1734,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       onChange={(e) =>
                         setServiceDraft({
                           ...serviceDraft,
-                          badge: {
-                            FR: e.target.value,
-                            EN: serviceDraft.badge?.EN || '',
-                          },
+                          badge: { FR:serviceDraft.badge?.FR ?? '', EN: e.target.value },
                         })
                       }
                       className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
@@ -2226,10 +1750,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                       onChange={(e) =>
                         setServiceDraft({
                           ...serviceDraft,
-                          badge: {
-                            FR: serviceDraft.badge?.FR || '',
-                            EN: e.target.value,
-                          },
+                          badge: { FR: serviceDraft.badge?.FR ?? '', EN: e.target.value },
                         })
                       }
                       className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#0f4c81] outline-none"
@@ -2320,10 +1841,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           ...serviceDraft,
                           deliverables: {
                             ...serviceDraft.deliverables,
-                            FR: e.target.value
-                              .split('\n')
-                              .map((line) => line.trim())
-                              .filter(Boolean),
+                            FR: e.target.value.split('\n').map((line) => line.trim()).filter(Boolean),
                           },
                         })
                       }
@@ -2342,10 +1860,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                           ...serviceDraft,
                           deliverables: {
                             ...serviceDraft.deliverables,
-                            EN: e.target.value
-                              .split('\n')
-                              .map((line) => line.trim())
-                              .filter(Boolean),
+                            EN: e.target.value.split('\n').map((line) => line.trim()).filter(Boolean),
                           },
                         })
                       }
@@ -2402,6 +1917,7 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
   );
 }
 
+// Helper Subcomponent for Bilingual Text Editing
 interface BilingualFieldProps {
   label: string;
   valFR: string;
@@ -2414,6 +1930,7 @@ function BilingualField({ label, valFR, valEN, isTextarea, onSave }: BilingualFi
   const [fr, setFr] = useState(valFR);
   const [en, setEn] = useState(valEN);
 
+  // Sync if external props change
   if (fr !== valFR && fr === '') setFr(valFR);
   if (en !== valEN && en === '') setEn(valEN);
 
@@ -2435,9 +1952,7 @@ function BilingualField({ label, valFR, valEN, isTextarea, onSave }: BilingualFi
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div>
-          <span className="block text-[10px] font-bold uppercase text-[#0f4c81] mb-1">
-            Version FR
-          </span>
+          <span className="block text-[10px] font-bold uppercase text-[#0f4c81] mb-1">Version FR</span>
           {isTextarea ? (
             <textarea
               rows={2}
@@ -2458,9 +1973,7 @@ function BilingualField({ label, valFR, valEN, isTextarea, onSave }: BilingualFi
         </div>
 
         <div>
-          <span className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
-            Version EN
-          </span>
+          <span className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Version EN</span>
           {isTextarea ? (
             <textarea
               rows={2}

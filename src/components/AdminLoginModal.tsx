@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, X, KeyRound, CheckCircle2, ShieldAlert, Sparkles, User, Eye, EyeOff } from 'lucide-react';
+import { Lock, X, KeyRound, CheckCircle2, ShieldAlert, Sparkles, User, Eye, EyeOff, BarChart3, PanelTop } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { Language } from '../types';
 

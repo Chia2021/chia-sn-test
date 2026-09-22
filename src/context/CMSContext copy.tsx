@@ -7,7 +7,6 @@ import {
   OfficeLocation,
   AdminUser,
   UserRole,
-  TopBarSettings,
 } from '../types';
 import { translations as defaultTranslations } from '../data/translations';
 import {
@@ -77,67 +76,11 @@ export const DEFAULT_HERO_BG =
   'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=2000&q=80';
 
 export const DEFAULT_HERO_SLIDES: string[] = [
-  'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=2000&q=80',
-  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2000&q=80',
-  'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=2000&q=80',
-  'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=2000&q=80',
+  'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=2000&q=80', // Financial Audit & Consultation
+  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2000&q=80', // Modern Corporate District & Headquarters
+  'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=2000&q=80', // Accounting, Balance Sheets & Tax Calculations
+  'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=2000&q=80', // Strategic Executive Boardroom Advisory
 ];
-
-export const DEFAULT_TOP_BAR_SETTINGS: TopBarSettings = {
-  emailAddress: 'contact@chia-sn.cm',
-  phoneNumber: '+237670123456',
-  linkedinUrl: 'https://linkedin.com',
-  facebookUrl: 'https://facebook.com',
-  whatsappNumber: '237670123456',
-  showLinkedin: true,
-  showFacebook: true,
-  showWhatsapp: true,
-  showHours: true,
-  showAdminButton: true,
-};
-
-const normalizeTopBarSettings = (raw: any): TopBarSettings => ({
-  emailAddress:
-    typeof raw?.emailAddress === 'string'
-      ? raw.emailAddress
-      : DEFAULT_TOP_BAR_SETTINGS.emailAddress,
-  phoneNumber:
-    typeof raw?.phoneNumber === 'string'
-      ? raw.phoneNumber
-      : DEFAULT_TOP_BAR_SETTINGS.phoneNumber,
-  linkedinUrl:
-    typeof raw?.linkedinUrl === 'string'
-      ? raw.linkedinUrl
-      : DEFAULT_TOP_BAR_SETTINGS.linkedinUrl,
-  facebookUrl:
-    typeof raw?.facebookUrl === 'string'
-      ? raw.facebookUrl
-      : DEFAULT_TOP_BAR_SETTINGS.facebookUrl,
-  whatsappNumber:
-    typeof raw?.whatsappNumber === 'string'
-      ? raw.whatsappNumber
-      : DEFAULT_TOP_BAR_SETTINGS.whatsappNumber,
-  showLinkedin:
-    typeof raw?.showLinkedin === 'boolean'
-      ? raw.showLinkedin
-      : DEFAULT_TOP_BAR_SETTINGS.showLinkedin,
-  showFacebook:
-    typeof raw?.showFacebook === 'boolean'
-      ? raw.showFacebook
-      : DEFAULT_TOP_BAR_SETTINGS.showFacebook,
-  showWhatsapp:
-    typeof raw?.showWhatsapp === 'boolean'
-      ? raw.showWhatsapp
-      : DEFAULT_TOP_BAR_SETTINGS.showWhatsapp,
-  showHours:
-    typeof raw?.showHours === 'boolean'
-      ? raw.showHours
-      : DEFAULT_TOP_BAR_SETTINGS.showHours,
-  showAdminButton:
-    typeof raw?.showAdminButton === 'boolean'
-      ? raw.showAdminButton
-      : DEFAULT_TOP_BAR_SETTINGS.showAdminButton,
-});
 
 export interface QuickEditItem {
   key: string;
@@ -145,6 +88,32 @@ export interface QuickEditItem {
   currentFR: string;
   currentEN: string;
 }
+
+export interface TopBarSettings {
+  emailAddress: string;       
+  phoneNumber: string;       
+  linkedinUrl: string;
+  facebookUrl: string;
+  whatsappNumber: string;     
+  showLinkedin: boolean;
+  showFacebook: boolean;
+  showWhatsapp: boolean;
+  showHours: boolean;
+  showAdminButton: boolean;
+}
+
+export const DEFAULT_TOP_BAR_SETTINGS: TopBarSettings = {
+  emailAddress: 'contact@chia-sn.cm',
+  phoneNumber: '+237699218912',
+  linkedinUrl: 'https://linkedin.com',
+  facebookUrl: 'https://facebook.com',
+  whatsappNumber: '237678171733',
+  showLinkedin: true,
+  showFacebook: true,
+  showWhatsapp: true,
+  showHours: true,
+  showAdminButton: true,
+};
 
 export interface CMSContentData {
   translationsOverride: {
@@ -157,7 +126,6 @@ export interface CMSContentData {
   officeLocations: OfficeLocation[];
   heroBg: string;
   heroImages?: string[];
-  topBarSettings: TopBarSettings;
 }
 
 interface CMSContextType {
@@ -208,7 +176,6 @@ interface CMSContextType {
   officeLocations: OfficeLocation[];
   heroBg: string;
   heroImages: string[];
-  topBarSettings: TopBarSettings;
 
   // Mutators
   updateText: (key: string, lang: Language, value: string) => void;
@@ -227,31 +194,29 @@ interface CMSContextType {
   addTestimonial: (testi: TestimonialItem) => void;
   approveTestimonial: (testiId: string) => void;
   rejectTestimonial: (testiId: string) => void;
-  submitClientTestimonial: (
-    draft: Omit<TestimonialItem, 'id' | 'status' | 'submittedAt'> & {
-      id?: string;
-      status?: 'pending';
-      submittedAt?: string;
-    }
-  ) => void;
+  submitClientTestimonial: (draft: Omit<TestimonialItem, 'id' | 'status' | 'submittedAt'> & { id?: string; status?: 'pending'; submittedAt?: string }) => void;
   deleteTestimonial: (testiId: string) => void;
   updateOfficeLocation: (index: number, location: OfficeLocation) => void;
-  updateTopBarSettings: (updates: Partial<TopBarSettings>) => void;
 
   // Persistence utilities
   exportBackup: () => void;
   importBackup: (jsonData: string) => boolean;
   resetToDefaults: () => void;
   hasCustomEdits: boolean;
+  
+
+  
 }
 
 const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
 export function CMSProvider({ children }: { children: React.ReactNode }) {
+  // Master Admin Password state
   const [masterPassword, setMasterPassword] = useState<string>(() => {
     return safeStorageGet(STORAGE_KEY_ADMIN_PASS) || '';
   });
 
+  // Users state
   const [users, setUsers] = useState<AdminUser[]>(() => {
     try {
       const saved = safeStorageGet(STORAGE_KEY_USERS);
@@ -265,6 +230,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     return [];
   });
 
+  // Current logged in user
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => {
     try {
       const saved = safeStorageGet(STORAGE_KEY_CURRENT_USER);
@@ -275,6 +241,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     return null;
   });
 
+  // Admin Auth State
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     const hasStoredAuth = safeStorageGet(STORAGE_KEY_AUTH) === 'true';
     const hasStoredCurrentUser = !!safeStorageGet(STORAGE_KEY_CURRENT_USER);
@@ -393,11 +360,13 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     };
   }, [loadAdminUsers]);
 
+  // UI state for panels
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isInlineEditActive, setIsInlineEditActive] = useState(false);
   const [quickEditTarget, setQuickEditTarget] = useState<QuickEditItem | null>(null);
 
+  // Loaded Custom Content
   const [content, setContent] = useState<CMSContentData>(() => {
     try {
       const saved = safeStorageGet(STORAGE_KEY_CONTENT);
@@ -421,7 +390,6 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
           officeLocations: parsed.officeLocations?.length ? parsed.officeLocations : defaultOffices,
           heroBg: heroBgVal,
           heroImages: heroImgs,
-          topBarSettings: normalizeTopBarSettings(parsed.topBarSettings),
         };
       }
     } catch (e) {
@@ -435,20 +403,18 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       officeLocations: defaultOffices,
       heroBg: DEFAULT_HERO_BG,
       heroImages: DEFAULT_HERO_SLIDES,
-      topBarSettings: DEFAULT_TOP_BAR_SETTINGS,
     };
   });
 
   const loadSupabaseContent = useCallback(async () => {
     try {
-      const [servicesResult, slidesResult, testimonialsResult, officesResult, translationsResult] =
-        await Promise.all([
-          supabase.from('services').select('*').order('sort_order', { ascending: true }),
-          supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true }),
-          supabase.from('testimonials').select('*').order('sort_order', { ascending: true }),
-          supabase.from('office_locations').select('*').order('sort_order', { ascending: true }),
-          supabase.from('page_translations').select('*'),
-        ]);
+      const [servicesResult, slidesResult, testimonialsResult, officesResult, translationsResult] = await Promise.all([
+        supabase.from('services').select('*').order('sort_order', { ascending: true }),
+        supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true }),
+        supabase.from('testimonials').select('*').order('sort_order', { ascending: true }),
+        supabase.from('office_locations').select('*').order('sort_order', { ascending: true }),
+        supabase.from('page_translations').select('*'),
+      ]);
 
       const hasSupabaseData =
         (servicesResult.data && servicesResult.data.length > 0) ||
@@ -457,47 +423,31 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         (officesResult.data && officesResult.data.length > 0) ||
         (translationsResult.data && translationsResult.data.length > 0);
 
-      if (!hasSupabaseData) return;
+      if (!hasSupabaseData) {
+        return;
+      }
 
-      setContent((prevContent) => {
-        const nextContent: CMSContentData = {
-          translationsOverride: {
-            FR: translationsResult.data
-              ? mapTranslationRowsToObject(translationsResult.data, 'FR')
-              : {},
-            EN: translationsResult.data
-              ? mapTranslationRowsToObject(translationsResult.data, 'EN')
-              : {},
-          },
-          services: servicesResult.data?.length
-            ? servicesResult.data.map(mapServiceRow)
-            : defaultServices,
-          carouselSlides: slidesResult.data?.length
-            ? slidesResult.data.map(mapCarouselRow)
-            : defaultSlides,
-          testimonials: testimonialsResult.data?.length
-            ? testimonialsResult.data.map(mapTestimonialRow).map(normalizeTestimonialStatus)
-            : defaultTestimonials.map(normalizeTestimonialStatus),
-          officeLocations: officesResult.data?.length
-            ? officesResult.data.map(mapOfficeLocationRow)
-            : defaultOffices,
-          heroBg: prevContent.heroBg || DEFAULT_HERO_BG,
-          heroImages:
-            prevContent.heroImages && prevContent.heroImages.length > 0
-              ? prevContent.heroImages
-              : DEFAULT_HERO_SLIDES,
-          // Keep local top bar settings (not stored in Supabase)
-          topBarSettings: prevContent.topBarSettings,
-        };
+      const nextContent: CMSContentData = {
+        translationsOverride: {
+          FR: translationsResult.data ? mapTranslationRowsToObject(translationsResult.data, 'FR') : {},
+          EN: translationsResult.data ? mapTranslationRowsToObject(translationsResult.data, 'EN') : {},
+        },
+        services: servicesResult.data?.length ? servicesResult.data.map(mapServiceRow) : defaultServices,
+        carouselSlides: slidesResult.data?.length ? slidesResult.data.map(mapCarouselRow) : defaultSlides,
+        testimonials: testimonialsResult.data?.length
+          ? testimonialsResult.data.map(mapTestimonialRow).map(normalizeTestimonialStatus)
+          : defaultTestimonials.map(normalizeTestimonialStatus),
+        officeLocations: officesResult.data?.length ? officesResult.data.map(mapOfficeLocationRow) : defaultOffices,
+        heroBg: DEFAULT_HERO_BG,
+        heroImages: DEFAULT_HERO_SLIDES,
+      };
 
-        try {
-          safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(nextContent));
-        } catch (error) {
-          console.error('Failed to persist Supabase CMS content locally:', error);
-        }
-
-        return nextContent;
-      });
+      setContent(nextContent);
+      try {
+        safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(nextContent));
+      } catch (error) {
+        console.error('Failed to persist Supabase CMS content locally:', error);
+      }
     } catch (error) {
       console.error('Failed to load CMS content from Supabase:', error);
     }
@@ -507,11 +457,11 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     void loadSupabaseContent();
   }, [loadSupabaseContent]);
 
+  // Persist content changes to localStorage
   const saveContent = useCallback((updated: CMSContentData) => {
     const normalized: CMSContentData = {
       ...updated,
       testimonials: updated.testimonials.map(normalizeTestimonialStatus),
-      topBarSettings: normalizeTopBarSettings(updated.topBarSettings),
     };
     setContent(normalized);
     try {
@@ -521,6 +471,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Persist users to localStorage
   const saveUsers = useCallback((updatedUsers: AdminUser[]) => {
     setUsers(updatedUsers);
     try {
@@ -530,6 +481,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Update Master Admin Password
   const updateMasterAdminPassword = useCallback(
     (currentPass: string, newPass: string): { success: boolean; message: string } => {
       if (currentPass.trim() !== masterPassword.trim()) {
@@ -550,6 +502,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         console.error('Failed to save master admin password:', err);
       }
 
+      // Also update master admin user password in users list
       setUsers((prev) => {
         const updated = prev.map((u) => {
           if (u.username === 'admin' || u.id === 'user-admin-master') {
@@ -571,6 +524,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     [masterPassword]
   );
 
+  // Authentication handler with detailed result
   const loginAdminWithResult = useCallback(
     async (
       identifierOrPassword: string,
@@ -620,7 +574,10 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (authError || !authData.user) {
-          return { success: false, message: 'Identifiant ou mot de passe incorrect.' };
+          return {
+            success: false,
+            message: 'Identifiant ou mot de passe incorrect.',
+          };
         }
 
         const { data: profileData, error: profileError } = await supabase
@@ -630,13 +587,19 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
 
         if (profileError || !profileData) {
-          return { success: false, message: 'Profil administrateur introuvable dans Supabase.' };
+          return {
+            success: false,
+            message: 'Profil administrateur introuvable dans Supabase.',
+          };
         }
 
         const loggedUser = mapAdminUserRow(profileData);
 
         if (!loggedUser.isActive) {
-          return { success: false, message: 'Ce compte utilisateur est actuellement désactivé.' };
+          return {
+            success: false,
+            message: 'Ce compte utilisateur est actuellement désactivé.',
+          };
         }
 
         const updatedUser: AdminUser = {
@@ -664,10 +627,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         return { success: true, user: updatedUser };
       } catch (error) {
         console.error('Supabase admin login failed:', error);
-        return {
-          success: false,
-          message: 'La connexion Supabase a échoué. Vérifiez vos identifiants.',
-        };
+        return { success: false, message: 'La connexion Supabase a échoué. Vérifiez vos identifiants.' };
       }
     },
     []
@@ -702,10 +662,9 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Add User
   const addUser = useCallback(
-    async (
-      userData: Omit<AdminUser, 'id' | 'createdAt'>
-    ): Promise<{ success: boolean; message: string }> => {
+    async (userData: Omit<AdminUser, 'id' | 'createdAt'>): Promise<{ success: boolean; message: string }> => {
       const usernameClean = userData.username.trim().toLowerCase();
       const emailClean = userData.email.trim().toLowerCase();
 
@@ -750,9 +709,9 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
           created_at: new Date().toISOString(),
         };
 
-        const { error: profileError } = await supabase
-          .from('admin_users')
-          .upsert(userRow, { onConflict: 'id' });
+        const { error: profileError } = await supabase.from('admin_users').upsert(userRow, {
+          onConflict: 'id',
+        });
 
         if (profileError) throw profileError;
 
@@ -761,10 +720,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         return { success: true, message: 'Utilisateur ajouté avec succès !' };
       } catch (error) {
         console.error('Failed to create Supabase admin user:', error);
-        return {
-          success: false,
-          message: 'Impossible de créer l’utilisateur dans Supabase Auth.',
-        };
+        return { success: false, message: 'Impossible de créer l’utilisateur dans Supabase Auth.' };
       }
     },
     [loadAdminUsers, users]
@@ -829,10 +785,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         return { success: true, message: 'Informations utilisateur mises à jour.' };
       } catch (error) {
         console.error('Failed to update admin_users profile:', error);
-        return {
-          success: false,
-          message: 'Impossible de mettre à jour le profil admin dans Supabase.',
-        };
+        return { success: false, message: 'Impossible de mettre à jour le profil admin dans Supabase.' };
       }
     },
     [users, currentUser, saveUsers]
@@ -866,10 +819,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         return { success: true, message: 'Compte utilisateur supprimé avec succès.' };
       } catch (error) {
         console.error('Failed to delete admin_users row:', error);
-        return {
-          success: false,
-          message: 'Impossible de supprimer le profil admin depuis Supabase.',
-        };
+        return { success: false, message: 'Impossible de supprimer le profil admin depuis Supabase.' };
       }
     },
     [users, currentUser, saveUsers]
@@ -891,18 +841,13 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       try {
         const currentAuthUser = currentUser?.id === userId ? await supabase.auth.getUser() : null;
 
-        if (
-          currentAuthUser &&
-          currentAuthUser.data.user &&
-          currentAuthUser.data.user.id === userId
-        ) {
+        if (currentAuthUser && currentAuthUser.data.user && currentAuthUser.data.user.id === userId) {
           const { error } = await supabase.auth.updateUser({ password: cleanPass });
           if (error) throw error;
         } else {
           return {
             success: false,
-            message:
-              'La réinitialisation de mot de passe pour un autre compte nécessite un accès serveur Supabase Auth.',
+            message: 'La réinitialisation de mot de passe pour un autre compte nécessite un accès serveur Supabase Auth.',
           };
         }
 
@@ -915,6 +860,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     [currentUser, users]
   );
 
+  // Merged translations helper
   const getTranslations = useCallback(
     (lang: Language) => {
       const defaults = defaultTranslations[lang] || {};
@@ -1017,7 +963,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         content.heroImages && content.heroImages.length > 0
           ? content.heroImages
           : DEFAULT_HERO_SLIDES;
-      if (current.length <= 1) return;
+      if (current.length <= 1) return; // Retain at least one image
       const updated = current.filter((_, i) => i !== index);
       saveContent({
         ...content,
@@ -1113,13 +1059,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   const approveTestimonial = useCallback(
     (testiId: string) => {
       const updated = content.testimonials.map((t) =>
-        t.id === testiId
-          ? {
-              ...t,
-              status: 'published' as const,
-              submittedAt: t.submittedAt || new Date().toISOString(),
-            }
-          : t
+        t.id === testiId ? { ...t, status: 'published' as const, submittedAt: t.submittedAt || new Date().toISOString() } : t
       );
       saveContent({ ...content, testimonials: updated });
     },
@@ -1129,13 +1069,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   const rejectTestimonial = useCallback(
     (testiId: string) => {
       const updated = content.testimonials.map((t) =>
-        t.id === testiId
-          ? {
-              ...t,
-              status: 'rejected' as const,
-              submittedAt: t.submittedAt || new Date().toISOString(),
-            }
-          : t
+        t.id === testiId ? { ...t, status: 'rejected' as const, submittedAt: t.submittedAt || new Date().toISOString() } : t
       );
       saveContent({ ...content, testimonials: updated });
     },
@@ -1143,13 +1077,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   );
 
   const submitClientTestimonial = useCallback(
-    (
-      draft: Omit<TestimonialItem, 'id' | 'status' | 'submittedAt'> & {
-        id?: string;
-        status?: 'pending';
-        submittedAt?: string;
-      }
-    ) => {
+    (draft: Omit<TestimonialItem, 'id' | 'status' | 'submittedAt'> & { id?: string; status?: 'pending'; submittedAt?: string }) => {
       const newTestimonial: TestimonialItem = {
         ...draft,
         id: draft.id || `pending-${Date.now()}`,
@@ -1174,16 +1102,6 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       const updated = [...content.officeLocations];
       updated[index] = location;
       saveContent({ ...content, officeLocations: updated });
-    },
-    [content, saveContent]
-  );
-
-  const updateTopBarSettings = useCallback(
-    (updates: Partial<TopBarSettings>) => {
-      saveContent({
-        ...content,
-        topBarSettings: normalizeTopBarSettings({ ...content.topBarSettings, ...updates }),
-      });
     },
     [content, saveContent]
   );
@@ -1228,7 +1146,6 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
             : defaultOffices,
           heroBg: heroBgVal,
           heroImages: heroImgs,
-          topBarSettings: normalizeTopBarSettings(parsed.topBarSettings),
         };
         saveContent(validContent);
         return true;
@@ -1249,7 +1166,6 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       officeLocations: defaultOffices,
       heroBg: DEFAULT_HERO_BG,
       heroImages: DEFAULT_HERO_SLIDES,
-      topBarSettings: DEFAULT_TOP_BAR_SETTINGS,
     };
     saveContent(emptyDefaults);
   }, [saveContent]);
@@ -1292,11 +1208,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         testimonials: content.testimonials,
         officeLocations: content.officeLocations,
         heroBg: content.heroBg,
-        heroImages:
-          content.heroImages && content.heroImages.length > 0
-            ? content.heroImages
-            : DEFAULT_HERO_SLIDES,
-        topBarSettings: content.topBarSettings,
+        heroImages: content.heroImages && content.heroImages.length > 0 ? content.heroImages : DEFAULT_HERO_SLIDES,
         updateText,
         updateTextBilingual,
         updateHeroBg,
@@ -1316,7 +1228,6 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         submitClientTestimonial,
         deleteTestimonial,
         updateOfficeLocation,
-        updateTopBarSettings,
         exportBackup,
         importBackup,
         resetToDefaults,

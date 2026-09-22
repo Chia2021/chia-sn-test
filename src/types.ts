@@ -26,6 +26,8 @@ export interface ContactFormData {
   message: string;
 }
 
+
+
 export interface OfficeLocation {
   city: Record<Language, string>;
   address: string;
@@ -82,4 +84,17 @@ export interface AdminUser {
   createdAt: string;
   lastLogin?: string;
   phone?: string;
+}
+
+export interface TopBarSettings {
+  emailAddress: string;
+  phoneNumber: string;
+  linkedinUrl: string;
+  facebookUrl: string;
+  whatsappNumber: string;
+  showLinkedin: boolean;
+  showFacebook: boolean;
+  showWhatsapp: boolean;
+  showHours: boolean;
+  showAdminButton: boolean;
 }

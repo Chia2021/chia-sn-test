@@ -143,7 +143,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'footer-standards': 'Normes & Références',
     'footer-terms': 'Conditions Générales & Mentions Légales',
     'footer-terms-short': 'Conditions Générales',
-    'footer-rights': 'Tous droits réservés. Cabinet d’expertise comptable - Conforme aux standards SYSCOHADA Révisé & Code Général des Impôts du Cameroun.'
+    'footer-rights': 'Tous droits réservés. Cabinet d’expertise comptable - Conforme aux standards SYSCOHADA Révisé & Code Général des Impôts du Cameroun.',
+
+    'top-admin-btn-label': 'Admin',
+    'top-admin-btn-label-logged': 'Panneau CMS',
+    'top-admin-btn-tooltip': 'Accès Administrateur (Gestion textes & images)',
+    'top-admin-btn-tooltip-logged': "Ouvrir le panneau d'administration CMS",
+    'top-aria-linkedin': 'LinkedIn Chia-SN',
+    'top-aria-facebook': 'Facebook Chia-SN',
+    'top-aria-whatsapp': 'WhatsApp Chia-SN Direct',
   },
   EN: {
     // Top Bar
@@ -287,6 +295,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'footer-standards': 'Regulatory Standards',
     'footer-terms': 'Terms of Service & Legal Notice',
     'footer-terms-short': 'Terms & Conditions',
-    'footer-rights': 'All rights reserved. Chartered Accounting Practice - Fully aligned with SYSCOHADA Revised & Cameroon Tax Code.'
+    'footer-rights': 'All rights reserved. Chartered Accounting Practice - Fully aligned with SYSCOHADA Revised & Cameroon Tax Code.',
+
+    'top-admin-btn-label': 'Admin',
+      'top-admin-btn-label-logged': 'CMS Panel',
+      'top-admin-btn-tooltip': 'Admin Access (Manage text & images)',
+      'top-admin-btn-tooltip-logged': 'Open CMS admin panel',
+      'top-aria-linkedin': 'Chia-SN LinkedIn',
+      'top-aria-facebook': 'Chia-SN Facebook',
+      'top-aria-whatsapp': 'Chia-SN WhatsApp Direct',
+    
   }
 };
