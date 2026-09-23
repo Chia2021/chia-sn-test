@@ -108,3 +108,20 @@ export interface LogoSettings {
   showSubtitle: boolean;
   logoSize: 'sm' | 'md' | 'lg';
 }
+
+export type ContactMessageStatus = 'new' | 'read' | 'replied' | 'archived';
+
+export interface ContactMessage {
+  id: string;
+  createdAt: string;
+  companyName: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  serviceType: string;
+  message: string;
+  status: ContactMessageStatus;
+  readAt?: string;
+  repliedAt?: string;
+  adminNotes?: string;
+}

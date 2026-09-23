@@ -237,6 +237,8 @@ interface CMSContextType {
   heroImages: string[];
   topBarSettings: TopBarSettings;
   logoSettings: LogoSettings;
+  unreadContactMessagesCount:number;
+  refreshUnreadContactMessages:()=>Promise<void>;
 
   updateText: (key: string, lang: Language, value: string) => void;
   updateTextBilingual: (key: string, frValue: string, enValue: string) => void;
@@ -1595,6 +1597,35 @@ const deleteCarouselSlide = useCallback(
     return hasOverrides || customHero;
   }, [content]);
 
+  const [unreadContactMessagesCount, setUnreadContactMessagesCount] = useState<number>(0);
+
+const refreshUnreadContactMessages = useCallback(async () => {
+  // Only query when an admin is logged in — avoids leaking counts to visitors
+  if (!isAdmin) {
+    setUnreadContactMessagesCount(0);
+    return;
+  }
+  try {
+    const { count, error } = await supabase
+      .from('contact_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'new');
+
+    if (error) {
+      console.warn('Unread contact messages count failed:', error.message);
+      return;
+    }
+    setUnreadContactMessagesCount(count ?? 0);
+  } catch (err) {
+    console.warn('Unread contact messages count threw:', err);
+  }
+}, [isAdmin]);
+
+// Refresh whenever admin logs in
+useEffect(() => {
+  void refreshUnreadContactMessages();
+}, [refreshUnreadContactMessages]);
+
   return (
     <CMSContext.Provider
       value={{
@@ -1620,6 +1651,8 @@ const deleteCarouselSlide = useCallback(
         setQuickEditTarget,
         triggerQuickEdit,
         getTranslations,
+        unreadContactMessagesCount,
+        refreshUnreadContactMessages,
         services: content.services,
         carouselSlides: content.carouselSlides,
         testimonials: content.testimonials,
@@ -1631,6 +1664,7 @@ const deleteCarouselSlide = useCallback(
             : DEFAULT_HERO_SLIDES,
         topBarSettings: content.topBarSettings,
         logoSettings:content.logoSettings,
+        
 
         updateText,
         updateTextBilingual,

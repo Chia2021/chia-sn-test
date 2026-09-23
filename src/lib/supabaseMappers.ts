@@ -1,6 +1,8 @@
 import type { Language, ServiceItem, CarouselSlide, OfficeLocation, TestimonialItem, AdminUser } from '../types';
 import type { FAQCategory, FAQItem } from '../data/faqData';
 
+import type { ContactMessage } from '../types';
+
 export const mapServiceRow = (row: Record<string, any>): ServiceItem => ({
   id: row.id,
   iconName: row.icon_name,
@@ -250,3 +252,31 @@ export const mapTopBarSettingsRow = (
   if (!row || typeof row.value !== 'object' || row.value === null) return null;
   return row.value as Record<string, any>;
 };
+
+
+export const mapContactMessageRow = (row: Record<string, any>): ContactMessage => ({
+  id: String(row.id),
+  createdAt: row.created_at ?? new Date().toISOString(),
+  companyName: row.company_name ?? '',
+  contactPerson: row.contact_person ?? '',
+  email: row.email ?? '',
+  phone: row.phone ?? '',
+  serviceType: row.service_type ?? '',
+  message: row.message ?? '',
+  status:
+    row.status === 'new' || row.status === 'read' || row.status === 'replied' || row.status === 'archived'
+      ? row.status
+      : 'new',
+  readAt: row.read_at ?? undefined,
+  repliedAt: row.replied_at ?? undefined,
+  adminNotes: row.admin_notes ?? undefined,
+});
+
+export const mapContactMessageToRow = (msg: ContactMessage) => ({
+  company_name: msg.companyName,
+  contact_person: msg.contactPerson,
+  email: msg.email,
+  phone: msg.phone,
+  service_type: msg.serviceType,
+  message: msg.message,
+});

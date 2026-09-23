@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Language, ContactFormData } from '../types';
 import { useCMS } from '../context/CMSContext';
 import { EditableText } from './EditableText';
+
 import { GoogleMapsLocalization } from './GoogleMapsLocalization';
 
 interface ContactSectionProps {
@@ -31,6 +32,29 @@ export function ContactSection({ currentLang, selectedServicePreload }: ContactS
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+
+// inside handleSubmit, after validation passes:
+try {
+  const { error } = await supabase.from('contact_messages').insert({
+    company_name: formData.companyName,
+    contact_person: formData.contactPerson,
+    email: formData.email,
+    phone: formData.phone,
+    service_type: formData.serviceType,
+    message: formData.message,
+  });
+
+  if (error) {
+    console.error('Contact message insert failed:', error.message);
+    // You can still show success, or show a soft warning — up to you.
+  }
+} catch (err) {
+  console.error('Contact message insert threw:', err);
+}
+
+// existing success UI:
+setSubmitted(true);
     setIsSubmitting(true);
 
     const randomRef = `REQ-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;

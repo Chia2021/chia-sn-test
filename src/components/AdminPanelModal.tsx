@@ -28,6 +28,14 @@ import {
   Users,
   Globe,
   PanelTop,
+  Inbox,
+  MailOpen,
+  MailCheck,
+  Archive,
+  User,
+  Building2,
+  Clock,
+  ExternalLink,
 } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { Language, ServiceItem, CarouselSlide, TestimonialItem, TopBarSettings, LogoSettings } from '../types';
@@ -35,6 +43,7 @@ import { compressImageFile } from '../utils/imageUtils';
 import { UserManagementSection } from './admin/UserManagementSection';
 import { SEOManagementSection } from './admin/SEOManagementSection';
 import { uploadToCmsAssets } from '../lib/storage';
+import { ContactMessagesSection } from './admin/ContactMessagesSection';
 
 
 interface AdminPanelModalProps {
@@ -49,6 +58,7 @@ type TabType =
   | 'carousel'
   | 'compliance'
   | 'testimonials'
+  | 'messages'
   | 'contact'
   | 'users'
   | 'seo'
@@ -75,6 +85,8 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     approveTestimonial,
     rejectTestimonial,
     deleteTestimonial,
+    unreadContactMessagesCount,
+    refreshUnreadContactMessages,
     officeLocations,
     updateOfficeLocation,
     heroBg,
@@ -351,6 +363,14 @@ const handleSlideImageUpload = async (slide: CarouselSlide, file: File) => {
       id: 'testimonials',
       label: currentLang === 'FR' ? 'Avis Clients & Stats' : 'Testimonials & Reviews',
       icon: Award,
+    },
+    {
+      id: 'messages',
+      label:
+        currentLang === 'FR'
+          ? `Messages Clients${unreadContactMessagesCount > 0 ? ` (${unreadContactMessagesCount})` : ''}`
+          : `Client Messages${unreadContactMessagesCount > 0 ? ` (${unreadContactMessagesCount})` : ''}`,
+      icon: Inbox,
     },
     {
       id: 'contact',
@@ -2170,6 +2190,10 @@ const handleSlideImageUpload = async (slide: CarouselSlide, file: File) => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === 'messages' && (
+                <ContactMessagesSection currentLang={currentLang} />
               )}
 
               {/* TAB 6: CONTACT & OFFICES */}
