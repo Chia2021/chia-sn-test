@@ -450,93 +450,119 @@ const awaitPendingWrites = useCallback(async () => {
     };
   });
 
-  const loadSupabaseContent = useCallback(async () => {
+const loadSupabaseContent = useCallback(async () => {
+  // Helper that swallows individual query errors so one bad table
+  // doesn't crash the whole load
+  const safe = async <T,>(
+    label: string,
+    builder: PromiseLike<{ data: T | null; error: { message: string } | null }>
+  ): Promise<T | null> => {
     try {
-      const [
-        servicesResult,
-        slidesResult,
-        testimonialsResult,
-        officesResult,
-        translationsResult,
-        topBarResult,
-        heroResult,
-      ] = await Promise.all([
-        supabase.from('services').select('*').order('sort_order', { ascending: true }),
-        supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true }),
-        supabase.from('testimonials').select('*').order('sort_order', { ascending: true }),
-        supabase.from('office_locations').select('*').order('sort_order', { ascending: true }),
-        supabase.from('page_translations').select('*'),
-        supabase.from('site_settings').select('*').eq('id', 'top_bar').maybeSingle(),
-        supabase.from('site_settings').select('*').eq('id', 'hero').maybeSingle(),
-      ]);
-
-      const remoteTopBar = mapTopBarSettingsRow(topBarResult.data);
-      const remoteHero = mapTopBarSettingsRow(heroResult.data);
-
-      const hasSupabaseData =
-        (servicesResult.data && servicesResult.data.length > 0) ||
-        (slidesResult.data && slidesResult.data.length > 0) ||
-        (testimonialsResult.data && testimonialsResult.data.length > 0) ||
-        (officesResult.data && officesResult.data.length > 0) ||
-        (translationsResult.data && translationsResult.data.length > 0) ||
-        !!remoteTopBar ||
-        !!remoteHero;
-
-      if (!hasSupabaseData) return;
-
-      setContent((prevContent) => {
-        // Merge remote hero settings if present
-        const heroBgFromRemote =
-          remoteHero && typeof remoteHero.heroBg === 'string' ? remoteHero.heroBg : null;
-        const heroImagesFromRemote =
-          remoteHero && Array.isArray(remoteHero.heroImages) && remoteHero.heroImages.length > 0
-            ? (remoteHero.heroImages as string[])
-            : null;
-
-        const nextContent: CMSContentData = {
-          translationsOverride: {
-            FR: translationsResult.data
-              ? mapTranslationRowsToObject(translationsResult.data, 'FR')
-              : prevContent.translationsOverride.FR,
-            EN: translationsResult.data
-              ? mapTranslationRowsToObject(translationsResult.data, 'EN')
-              : prevContent.translationsOverride.EN,
-          },
-          services: servicesResult.data?.length
-            ? servicesResult.data.map(mapServiceRow)
-            : prevContent.services,
-          carouselSlides: slidesResult.data?.length
-            ? slidesResult.data.map(mapCarouselRow)
-            : prevContent.carouselSlides,
-          testimonials: testimonialsResult.data?.length
-            ? testimonialsResult.data.map(mapTestimonialRow).map(normalizeTestimonialStatus)
-            : prevContent.testimonials,
-          officeLocations: officesResult.data?.length
-            ? officesResult.data.map(mapOfficeLocationRow)
-            : prevContent.officeLocations,
-          heroBg: heroBgFromRemote || prevContent.heroBg || DEFAULT_HERO_BG,
-          heroImages:
-            heroImagesFromRemote ||
-            (prevContent.heroImages && prevContent.heroImages.length > 0
-              ? prevContent.heroImages
-              : DEFAULT_HERO_SLIDES),
-          topBarSettings: remoteTopBar
-            ? normalizeTopBarSettings(remoteTopBar)
-            : prevContent.topBarSettings,
-        };
-
-        try {
-          safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(nextContent));
-        } catch (error) {
-          console.error('Failed to persist Supabase CMS content locally:', error);
-        }
-
-        return nextContent;
-      });
-    } catch (error) {
-      console.error('Failed to load CMS content from Supabase:', error);
+      const result = await builder;
+      if (result.error) {
+        console.warn(`[CMS] ${label} query error:`, result.error.message);
+        return null;
+      }
+      return result.data ?? null;
+    } catch (err) {
+      console.warn(`[CMS] ${label} query threw:`, err);
+      return null;
     }
-  }, []);
+  };
+
+  try {
+    const [
+      servicesData,
+      slidesData,
+      testimonialsData,
+      officesData,
+      translationsData,
+      topBarRow,
+      heroRow,
+    ] = await Promise.all([
+      safe('services', supabase.from('services').select('*').order('sort_order', { ascending: true })),
+      safe('carousel_slides', supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true })),
+      safe('testimonials', supabase.from('testimonials').select('*').order('sort_order', { ascending: true })),
+      safe('office_locations', supabase.from('office_locations').select('*').order('sort_order', { ascending: true })),
+      safe('page_translations', supabase.from('page_translations').select('*')),
+      safe('site_settings.top_bar', supabase.from('site_settings').select('*').eq('id', 'top_bar').maybeSingle()),
+      safe('site_settings.hero', supabase.from('site_settings').select('*').eq('id', 'hero').maybeSingle()),
+    ]);
+
+    const remoteTopBar = mapTopBarSettingsRow(topBarRow as Record<string, any> | null);
+    const remoteHero = mapTopBarSettingsRow(heroRow as Record<string, any> | null);
+
+    const hasSupabaseData =
+      (servicesData && Array.isArray(servicesData) && servicesData.length > 0) ||
+      (slidesData && Array.isArray(slidesData) && slidesData.length > 0) ||
+      (testimonialsData && Array.isArray(testimonialsData) && testimonialsData.length > 0) ||
+      (officesData && Array.isArray(officesData) && officesData.length > 0) ||
+      (translationsData && Array.isArray(translationsData) && translationsData.length > 0) ||
+      !!remoteTopBar ||
+      !!remoteHero;
+
+    if (!hasSupabaseData) return;
+
+    setContent((prevContent) => {
+      const heroBgFromRemote =
+        remoteHero && typeof (remoteHero as any).heroBg === 'string'
+          ? (remoteHero as any).heroBg
+          : null;
+      const heroImagesFromRemote =
+        remoteHero &&
+        Array.isArray((remoteHero as any).heroImages) &&
+        (remoteHero as any).heroImages.length > 0
+          ? ((remoteHero as any).heroImages as string[])
+          : null;
+
+      const nextContent: CMSContentData = {
+        translationsOverride: {
+          FR: Array.isArray(translationsData)
+            ? mapTranslationRowsToObject(translationsData as any[], 'FR')
+            : prevContent.translationsOverride.FR,
+          EN: Array.isArray(translationsData)
+            ? mapTranslationRowsToObject(translationsData as any[], 'EN')
+            : prevContent.translationsOverride.EN,
+        },
+        services:
+          Array.isArray(servicesData) && servicesData.length > 0
+            ? servicesData.map(mapServiceRow)
+            : prevContent.services,
+        carouselSlides:
+          Array.isArray(slidesData) && slidesData.length > 0
+            ? slidesData.map(mapCarouselRow)
+            : prevContent.carouselSlides,
+        testimonials:
+          Array.isArray(testimonialsData) && testimonialsData.length > 0
+            ? testimonialsData.map(mapTestimonialRow).map(normalizeTestimonialStatus)
+            : prevContent.testimonials,
+        officeLocations:
+          Array.isArray(officesData) && officesData.length > 0
+            ? officesData.map(mapOfficeLocationRow)
+            : prevContent.officeLocations,
+        heroBg: heroBgFromRemote || prevContent.heroBg || DEFAULT_HERO_BG,
+        heroImages:
+          heroImagesFromRemote ||
+          (prevContent.heroImages && prevContent.heroImages.length > 0
+            ? prevContent.heroImages
+            : DEFAULT_HERO_SLIDES),
+        topBarSettings: remoteTopBar
+          ? normalizeTopBarSettings(remoteTopBar)
+          : prevContent.topBarSettings,
+      };
+
+      try {
+        safeStorageSet(STORAGE_KEY_CONTENT, JSON.stringify(nextContent));
+      } catch (error) {
+        console.error('Failed to persist Supabase CMS content locally:', error);
+      }
+
+      return nextContent;
+    });
+  } catch (error) {
+    console.error('Failed to load CMS content from Supabase:', error);
+  }
+}, []);
 
   useEffect(() => {
     void loadSupabaseContent();
