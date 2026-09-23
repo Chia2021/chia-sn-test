@@ -92,7 +92,7 @@ export function Navbar({
             onClick={(e) => handleNavClick(e, '#home')}
             className="focus:outline-none focus:ring-2 focus:ring-blue-600 rounded-lg"
           >
-            <Logo size="md" />
+            <Logo currentLang={currentLang} />
           </a>
 
           {/* Desktop Navigation Links */}

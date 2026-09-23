@@ -8,6 +8,7 @@ import {
   AdminUser,
   UserRole,
   TopBarSettings,
+  LogoSettings,
 } from '../types';
 import { translations as defaultTranslations } from '../data/translations';
 import {
@@ -101,6 +102,8 @@ export const DEFAULT_TOP_BAR_SETTINGS: TopBarSettings = {
   showAdminButton: true,
 };
 
+
+
 const normalizeTopBarSettings = (raw: any): TopBarSettings => ({
   emailAddress:
     typeof raw?.emailAddress === 'string' ? raw.emailAddress : DEFAULT_TOP_BAR_SETTINGS.emailAddress,
@@ -134,6 +137,37 @@ const normalizeTopBarSettings = (raw: any): TopBarSettings => ({
       : DEFAULT_TOP_BAR_SETTINGS.showAdminButton,
 });
 
+export const DEFAULT_LOGO_SETTINGS: LogoSettings = {
+  logoUrl: null,
+  brandName: 'Chia',
+  brandNameHighlight: '-SN',
+  subtitleFR: 'Compta & Conseil Fiscal',
+  subtitleEN: 'Accounting & Tax Advisory',
+  showSubtitle: true,
+  logoSize: 'md',
+};
+
+const normalizeLogoSettings = (raw: any): LogoSettings => ({
+  logoUrl: typeof raw?.logoUrl === 'string' && raw.logoUrl.length > 0 ? raw.logoUrl : null,
+  brandName: typeof raw?.brandName === 'string' ? raw.brandName : DEFAULT_LOGO_SETTINGS.brandName,
+  brandNameHighlight:
+    typeof raw?.brandNameHighlight === 'string'
+      ? raw.brandNameHighlight
+      : DEFAULT_LOGO_SETTINGS.brandNameHighlight,
+  subtitleFR:
+    typeof raw?.subtitleFR === 'string' ? raw.subtitleFR : DEFAULT_LOGO_SETTINGS.subtitleFR,
+  subtitleEN:
+    typeof raw?.subtitleEN === 'string' ? raw.subtitleEN : DEFAULT_LOGO_SETTINGS.subtitleEN,
+  showSubtitle:
+    typeof raw?.showSubtitle === 'boolean'
+      ? raw.showSubtitle
+      : DEFAULT_LOGO_SETTINGS.showSubtitle,
+  logoSize:
+    raw?.logoSize === 'sm' || raw?.logoSize === 'md' || raw?.logoSize === 'lg'
+      ? raw.logoSize
+      : DEFAULT_LOGO_SETTINGS.logoSize,
+});
+
 export interface QuickEditItem {
   key: string;
   label: string;
@@ -153,6 +187,7 @@ export interface CMSContentData {
   heroBg: string;
   heroImages?: string[];
   topBarSettings: TopBarSettings;
+  logoSettings:LogoSettings;
 }
 
 interface CMSContextType {
@@ -201,6 +236,7 @@ interface CMSContextType {
   heroBg: string;
   heroImages: string[];
   topBarSettings: TopBarSettings;
+  logoSettings: LogoSettings;
 
   updateText: (key: string, lang: Language, value: string) => void;
   updateTextBilingual: (key: string, frValue: string, enValue: string) => void;
@@ -228,6 +264,7 @@ interface CMSContextType {
   deleteTestimonial: (testiId: string) => void;
   updateOfficeLocation: (index: number, location: OfficeLocation) => void;
   updateTopBarSettings: (updates: Partial<TopBarSettings>) => void;
+  updateLogoSettings:(updates: Partial<LogoSettings>)=> void;
 
   exportBackup: () => void;
   importBackup: (jsonData: string) => boolean;
@@ -433,6 +470,7 @@ const awaitPendingWrites = useCallback(async () => {
           heroBg: heroBgVal,
           heroImages: heroImgs,
           topBarSettings: normalizeTopBarSettings(parsed.topBarSettings),
+          logoSettings:normalizeLogoSettings(parsed.logoSettings),
         };
       }
     } catch (e) {
@@ -447,6 +485,7 @@ const awaitPendingWrites = useCallback(async () => {
       heroBg: DEFAULT_HERO_BG,
       heroImages: DEFAULT_HERO_SLIDES,
       topBarSettings: DEFAULT_TOP_BAR_SETTINGS,
+      logoSettings: DEFAULT_LOGO_SETTINGS,
     };
   });
 
@@ -479,6 +518,7 @@ const loadSupabaseContent = useCallback(async () => {
       translationsData,
       topBarRow,
       heroRow,
+      logoRow,
     ] = await Promise.all([
       safe('services', supabase.from('services').select('*').order('sort_order', { ascending: true })),
       safe('carousel_slides', supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true })),
@@ -487,10 +527,12 @@ const loadSupabaseContent = useCallback(async () => {
       safe('page_translations', supabase.from('page_translations').select('*')),
       safe('site_settings.top_bar', supabase.from('site_settings').select('*').eq('id', 'top_bar').maybeSingle()),
       safe('site_settings.hero', supabase.from('site_settings').select('*').eq('id', 'hero').maybeSingle()),
+      safe('site_settings.logo', supabase.from('site_settings').select('*').eq('id','logo').maybeSingle()),
     ]);
 
     const remoteTopBar = mapTopBarSettingsRow(topBarRow as Record<string, any> | null);
     const remoteHero = mapTopBarSettingsRow(heroRow as Record<string, any> | null);
+    const remoteLogo = mapTopBarSettingsRow(logoRow as Record<string, any> | null);
 
     const hasSupabaseData =
       (servicesData && Array.isArray(servicesData) && servicesData.length > 0) ||
@@ -499,7 +541,8 @@ const loadSupabaseContent = useCallback(async () => {
       (officesData && Array.isArray(officesData) && officesData.length > 0) ||
       (translationsData && Array.isArray(translationsData) && translationsData.length > 0) ||
       !!remoteTopBar ||
-      !!remoteHero;
+      !!remoteHero
+      || !!remoteLogo;
 
     if (!hasSupabaseData) return;
 
@@ -549,6 +592,9 @@ const loadSupabaseContent = useCallback(async () => {
         topBarSettings: remoteTopBar
           ? normalizeTopBarSettings(remoteTopBar)
           : prevContent.topBarSettings,
+        logoSettings:remoteLogo
+          ? normalizeLogoSettings(remoteLogo)
+          : prevContent.logoSettings,
       };
 
       try {
@@ -1428,6 +1474,33 @@ const loadSupabaseContent = useCallback(async () => {
     [content, saveContent, trackWrite]
   );
 
+  const updateLogoSettings = useCallback(
+  (updates: Partial<LogoSettings>) => {
+    const nextSettings = normalizeLogoSettings({
+      ...content.logoSettings,
+      ...updates,
+    });
+    saveContent({ ...content, logoSettings: nextSettings });
+
+    trackWrite(
+      supabase
+        .from('site_settings')
+        .upsert(
+          {
+            id: 'logo',
+            value: nextSettings,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        )
+        .then(({ error }) => {
+          if (error) console.error('site_settings.logo upsert error:', error.message);
+        })
+    );
+  },
+  [content, saveContent, trackWrite]
+);
+
   const exportBackup = useCallback(() => {
     const jsonStr = JSON.stringify(content, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -1469,6 +1542,7 @@ const loadSupabaseContent = useCallback(async () => {
           heroBg: heroBgVal,
           heroImages: heroImgs,
           topBarSettings: normalizeTopBarSettings(parsed.topBarSettings),
+          logoSettings: normalizeLogoSettings(parsed.logoSettings),
         };
         saveContent(validContent);
         return true;
@@ -1490,6 +1564,7 @@ const loadSupabaseContent = useCallback(async () => {
       heroBg: DEFAULT_HERO_BG,
       heroImages: DEFAULT_HERO_SLIDES,
       topBarSettings: DEFAULT_TOP_BAR_SETTINGS,
+      logoSettings: DEFAULT_LOGO_SETTINGS,
     };
     saveContent(emptyDefaults);
   }, [saveContent]);
@@ -1537,6 +1612,8 @@ const loadSupabaseContent = useCallback(async () => {
             ? content.heroImages
             : DEFAULT_HERO_SLIDES,
         topBarSettings: content.topBarSettings,
+        logoSettings:content.logoSettings,
+
         updateText,
         updateTextBilingual,
         updateHeroBg,
@@ -1557,6 +1634,7 @@ const loadSupabaseContent = useCallback(async () => {
         deleteTestimonial,
         updateOfficeLocation,
         updateTopBarSettings,
+        updateLogoSettings,
         exportBackup,
         importBackup,
         resetToDefaults,

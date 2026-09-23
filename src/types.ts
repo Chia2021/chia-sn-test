@@ -98,3 +98,13 @@ export interface TopBarSettings {
   showHours: boolean;
   showAdminButton: boolean;
 }
+
+export interface LogoSettings {
+  logoUrl: string | null;
+  brandName: string;
+  brandNameHighlight: string;
+  subtitleFR: string;
+  subtitleEN: string;
+  showSubtitle: boolean;
+  logoSize: 'sm' | 'md' | 'lg';
+}

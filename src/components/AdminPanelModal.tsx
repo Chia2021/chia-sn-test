@@ -4,6 +4,7 @@ import {
   X,
   Sliders,
   Image as ImageIcon,
+  Palette,
   Type,
   Briefcase,
   Layers,
@@ -29,7 +30,7 @@ import {
   PanelTop,
 } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import { Language, ServiceItem, CarouselSlide, TestimonialItem, TopBarSettings } from '../types';
+import { Language, ServiceItem, CarouselSlide, TestimonialItem, TopBarSettings, LogoSettings } from '../types';
 import { compressImageFile } from '../utils/imageUtils';
 import { UserManagementSection } from './admin/UserManagementSection';
 import { SEOManagementSection } from './admin/SEOManagementSection';
@@ -41,6 +42,7 @@ interface AdminPanelModalProps {
 
 type TabType =
   | 'topbar'
+  |  'logo'
   | 'hero'
   | 'services'
   | 'carousel'
@@ -82,6 +84,8 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     removeHeroImage,
     topBarSettings,
     updateTopBarSettings,
+    logoSettings,
+    updateLogoSettings,
     exportBackup,
     importBackup,
     resetToDefaults,
@@ -119,6 +123,9 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
   }));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
+
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   const tFR = getTranslations('FR');
   const tEN = getTranslations('EN');
@@ -167,6 +174,31 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  try {
+    setIsUploadingLogo(true);
+    // Logos are small — 400x400 is plenty, keeps the payload tiny
+    const compressedDataUrl = await compressImageFile(file, 400, 400, 0.9);
+    updateLogoSettings({ logoUrl: compressedDataUrl });
+    showNotification();
+  } catch (err: any) {
+    showNotice(
+      currentLang === 'FR' ? 'Erreur d’image' : 'Image error',
+      err.message ||
+        (currentLang === 'FR'
+          ? "Erreur lors du traitement de l'image."
+          : 'Error while processing the image.'),
+      'error'
+    );
+  } finally {
+    setIsUploadingLogo(false);
+    if (logoFileInputRef.current) logoFileInputRef.current.value = '';
+  }
+};
 
   const handleSlideImageUpload = async (slide: CarouselSlide, file: File) => {
     try {
@@ -224,6 +256,11 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
       id: 'topbar',
       label: currentLang === 'FR' ? 'Barre Supérieure' : 'Top Bar',
       icon: PanelTop,
+    },
+    {
+      id: 'logo',
+      label: currentLang === 'FR' ? 'Logo & Marque' : 'Logo & Branding',
+      icon: Palette,
     },
     {
       id: 'hero',
@@ -695,6 +732,265 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
                         showNotification();
                       }}
                     />
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'logo' && (
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-[#0f4c81]" />
+                      <span>
+                        {currentLang === 'FR' ? 'Logo & Identité de Marque' : 'Logo & Brand Identity'}
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {currentLang === 'FR'
+                        ? 'Téléversez votre propre logo, ajustez le nom de marque et le sous-titre affichés dans l’en-tête.'
+                        : 'Upload your own logo, adjust the brand name and the subtitle shown in the header.'}
+                    </p>
+                  </div>
+
+                  {/* Live preview */}
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+                    <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-3">
+                      {currentLang === 'FR' ? 'Aperçu en direct' : 'Live Preview'}
+                    </h5>
+                    <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                      <div
+                        className={`shrink-0 rounded-xl bg-gradient-to-br from-blue-50 to-slate-100 shadow-sm border border-slate-200/80 overflow-hidden ${
+                          logoSettings.logoUrl ? 'p-0' : 'p-1'
+                        } ${
+                          logoSettings.logoSize === 'sm'
+                            ? 'w-8 h-8'
+                            : logoSettings.logoSize === 'lg'
+                            ? 'w-12 h-12'
+                            : 'w-10 h-10'
+                        }`}
+                      >
+                        {logoSettings.logoUrl ? (
+                          <img
+                            src={logoSettings.logoUrl}
+                            alt="Logo preview"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <svg viewBox="0 0 100 100" className="w-full h-full">
+                            <circle cx="50" cy="50" r="45" fill="#f0f4f8" />
+                            <path
+                              d="M35,65 C35,45 45,35 65,35"
+                              stroke="#0f4c81"
+                              strokeWidth="8"
+                              fill="none"
+                              strokeLinecap="round"
+                            />
+                            <path
+                              d="M45,65 C45,52 52,45 65,45"
+                              stroke="#1d70b8"
+                              strokeWidth="6"
+                              fill="none"
+                              strokeLinecap="round"
+                            />
+                            <circle cx="65" cy="35" r="7" fill="#e67e22" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-extrabold tracking-tight text-slate-900 text-xl md:text-2xl leading-none">
+                          {logoSettings.brandName}
+                          <span className="text-[#1d70b8]">{logoSettings.brandNameHighlight}</span>
+                        </span>
+                        {logoSettings.showSubtitle && (
+                          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 mt-1">
+                            {currentLang === 'FR' ? logoSettings.subtitleFR : logoSettings.subtitleEN}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Logo image upload */}
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)] space-y-3">
+                    <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500">
+                      {currentLang === 'FR' ? 'Image du logo' : 'Logo Image'}
+                    </h5>
+
+                    <p className="text-xs text-slate-600">
+                      {currentLang === 'FR'
+                        ? 'PNG transparent recommandé. Si aucune image n’est téléversée, le logo SVG par défaut sera utilisé.'
+                        : 'Transparent PNG recommended. If no image is uploaded, the default SVG logo will be used.'}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        ref={logoFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        id="logo-file-upload"
+                      />
+                      <label
+                        htmlFor="logo-file-upload"
+                        className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#0f4c81] hover:bg-[#1d70b8] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>
+                          {isUploadingLogo
+                            ? 'Compression...'
+                            : logoSettings.logoUrl
+                            ? currentLang === 'FR'
+                              ? 'Remplacer le logo'
+                              : 'Replace logo'
+                            : currentLang === 'FR'
+                            ? 'Téléverser un logo'
+                            : 'Upload a logo'}
+                        </span>
+                      </label>
+
+                      {logoSettings.logoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateLogoSettings({ logoUrl: null });
+                            showNotification();
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-xl border border-red-200 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>
+                            {currentLang === 'FR' ? 'Revenir au logo par défaut' : 'Reset to default logo'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Brand name fields */}
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)] space-y-3">
+                    <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500">
+                      {currentLang === 'FR' ? 'Nom de marque' : 'Brand Name'}
+                    </h5>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          {currentLang === 'FR' ? 'Texte principal (noir)' : 'Main text (dark)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={logoSettings.brandName}
+                          onChange={(e) => {
+                            updateLogoSettings({ brandName: e.target.value });
+                            showNotification();
+                          }}
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-[#0f4c81] outline-none"
+                          placeholder="Chia"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          {currentLang === 'FR' ? 'Suffixe coloré (bleu)' : 'Highlighted suffix (blue)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={logoSettings.brandNameHighlight}
+                          onChange={(e) => {
+                            updateLogoSettings({ brandNameHighlight: e.target.value });
+                            showNotification();
+                          }}
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-[#0f4c81] outline-none"
+                          placeholder="-SN"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subtitle fields */}
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500">
+                        {currentLang === 'FR' ? 'Sous-titre' : 'Subtitle'}
+                      </h5>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={logoSettings.showSubtitle}
+                          onChange={(e) => {
+                            updateLogoSettings({ showSubtitle: e.target.checked });
+                            showNotification();
+                          }}
+                          className="w-4 h-4 accent-[#0f4c81] cursor-pointer"
+                        />
+                        <span className="text-xs font-semibold text-slate-700">
+                          {currentLang === 'FR' ? 'Afficher' : 'Show'}
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          {currentLang === 'FR' ? 'Sous-titre (FR)' : 'Subtitle (FR)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={logoSettings.subtitleFR}
+                          onChange={(e) => {
+                            updateLogoSettings({ subtitleFR: e.target.value });
+                            showNotification();
+                          }}
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-[#0f4c81] outline-none"
+                          placeholder="Compta & Conseil Fiscal"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          {currentLang === 'FR' ? 'Sous-titre (EN)' : 'Subtitle (EN)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={logoSettings.subtitleEN}
+                          onChange={(e) => {
+                            updateLogoSettings({ subtitleEN: e.target.value });
+                            showNotification();
+                          }}
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-[#0f4c81] outline-none"
+                          placeholder="Accounting & Tax Advisory"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Size selector */}
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)] space-y-3">
+                    <h5 className="font-bold text-xs uppercase tracking-wider text-slate-500">
+                      {currentLang === 'FR' ? 'Taille par défaut' : 'Default Size'}
+                    </h5>
+
+                    <div className="flex flex-wrap gap-2">
+                      {(['sm', 'md', 'lg'] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            updateLogoSettings({ logoSize: s });
+                            showNotification();
+                          }}
+                          className={`px-4 py-2 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
+                            logoSettings.logoSize === s
+                              ? 'bg-[#0f4c81] text-white border-[#0f4c81]'
+                              : 'bg-white text-slate-700 border-slate-300 hover:border-[#0f4c81]'
+                          }`}
+                        >
+                          {s === 'sm' ? 'Petit' : s === 'md' ? 'Moyen' : 'Grand'}
+                          <span className="ml-1 opacity-60">({s})</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
