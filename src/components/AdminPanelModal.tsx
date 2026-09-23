@@ -34,6 +34,7 @@ import { Language, ServiceItem, CarouselSlide, TestimonialItem, TopBarSettings, 
 import { compressImageFile } from '../utils/imageUtils';
 import { UserManagementSection } from './admin/UserManagementSection';
 import { SEOManagementSection } from './admin/SEOManagementSection';
+import { uploadToCmsAssets } from '../lib/storage';
 
 
 interface AdminPanelModalProps {
@@ -151,39 +152,78 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
     setTimeout(() => setSaveSuccessNotice(false), 2500);
   };
 
-  const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    try {
-      setIsUploading(true);
-      const compressedDataUrl = await compressImageFile(file, 1920, 1080, 0.82);
-      updateHeroBg(compressedDataUrl);
-      showNotification();
-    } catch (err: any) {
+  try {
+    setIsUploading(true);
+    const compressedDataUrl = await compressImageFile(file, 1920, 1080, 0.82);
+    const res = await fetch(compressedDataUrl);
+    const blob = await res.blob();
+
+    const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+    const path = `hero/hero-${Date.now()}.${ext}`;
+
+    const result = await uploadToCmsAssets(blob, path);
+    if (!result.success) {
       showNotice(
-        currentLang === 'FR' ? 'Erreur d’image' : 'Image error',
-        err.message ||
-          (currentLang === 'FR'
-            ? "Erreur lors du traitement de l'image."
-            : 'Error while processing the image.'),
+        currentLang === 'FR' ? 'Échec du téléversement' : 'Upload failed',
+        result.message,
         'error'
       );
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
     }
-  };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    addHeroImage(result.publicUrl);
+    showNotification();
+  } catch (err: any) {
+    showNotice(
+      currentLang === 'FR' ? 'Erreur d’image' : 'Image error',
+      err.message ||
+        (currentLang === 'FR'
+          ? "Erreur lors du traitement de l'image."
+          : 'Error while processing the image.'),
+      'error'
+    );
+  } finally {
+    setIsUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+};
+
+const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
   try {
     setIsUploadingLogo(true);
-    // Logos are small — 400x400 is plenty, keeps the payload tiny
+
+    // 1) Compress to a reasonable size so we don't upload a 5 MB PNG
     const compressedDataUrl = await compressImageFile(file, 400, 400, 0.9);
-    updateLogoSettings({ logoUrl: compressedDataUrl });
+
+    // 2) Convert the compressed data URL back to a Blob for Storage upload
+    const res = await fetch(compressedDataUrl);
+    const blob = await res.blob();
+
+    // 3) Upload to Supabase Storage at a stable path so re-uploads overwrite
+    const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+    const path = `logo/brand-logo.${ext}`;
+
+    const { uploadToCmsAssets } = await import('../lib/storage');
+    const result = await uploadToCmsAssets(blob, path);
+
+    if (!result.success) {
+      showNotice(
+        currentLang === 'FR' ? 'Échec du téléversement' : 'Upload failed',
+        result.message,
+        'error'
+      );
+      return;
+    }
+
+    // 4) Persist only the public URL in site_settings — tiny payload, no HTTP/2 issue
+    updateLogoSettings({ logoUrl: result.publicUrl });
     showNotification();
   } catch (err: any) {
     showNotice(
@@ -200,25 +240,50 @@ export function AdminPanelModal({ currentLang }: AdminPanelModalProps) {
   }
 };
 
-  const handleSlideImageUpload = async (slide: CarouselSlide, file: File) => {
-    try {
-      setIsUploading(true);
-      const compressedDataUrl = await compressImageFile(file, 1280, 720, 0.82);
-      updateCarouselSlide({ ...slide, image: compressedDataUrl });
-      showNotification();
-    } catch (err: any) {
+const handleSlideImageUpload = async (slide: CarouselSlide, file: File) => {
+  try {
+    setIsUploading(true);
+
+    // 1) Compress to a reasonable carousel size (1280x720) before uploading
+    const compressedDataUrl = await compressImageFile(file, 1280, 720, 0.82);
+
+    // 2) Convert the compressed data URL back to a Blob for Storage upload
+    const res = await fetch(compressedDataUrl);
+    const blob = await res.blob();
+
+    // 3) Build a stable, unique path per slide so re-uploads overwrite
+    //    the same object rather than piling up orphaned files
+    const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+    const path = `carousel/${slide.id}.${ext}`;
+
+    // 4) Upload to Supabase Storage
+    const result = await uploadToCmsAssets(blob, path);
+
+    if (!result.success) {
       showNotice(
-        currentLang === 'FR' ? 'Erreur d’image' : 'Image error',
-        err.message ||
-          (currentLang === 'FR'
-            ? "Erreur lors du traitement de l'image."
-            : 'Error while processing the image.'),
+        currentLang === 'FR' ? 'Échec du téléversement' : 'Upload failed',
+        result.message,
         'error'
       );
-    } finally {
-      setIsUploading(false);
+      return;
     }
-  };
+
+    // 5) Persist only the public URL on the slide — tiny payload, no HTTP/2 issue
+    updateCarouselSlide({ ...slide, image: result.publicUrl });
+    showNotification();
+  } catch (err: any) {
+    showNotice(
+      currentLang === 'FR' ? 'Erreur d’image' : 'Image error',
+      err.message ||
+        (currentLang === 'FR'
+          ? "Erreur lors du traitement de l'image."
+          : 'Error while processing the image.'),
+      'error'
+    );
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -1280,22 +1280,40 @@ const loadSupabaseContent = useCallback(async () => {
     [content, saveContent, trackWrite]
   );
 
-  const deleteCarouselSlide = useCallback(
-    (slideId: string) => {
-      const filtered = content.carouselSlides.filter((s) => s.id !== slideId);
-      saveContent({ ...content, carouselSlides: filtered });
-      trackWrite(
-        supabase
-          .from('carousel_slides')
-          .delete()
-          .eq('id', slideId)
-          .then(({ error }) => {
-            if (error) console.error('carousel_slides delete error:', error.message);
-          })
-      );
-    },
-    [content, saveContent, trackWrite]
-  );
+const deleteCarouselSlide = useCallback(
+  (slideId: string) => {
+    const filtered = content.carouselSlides.filter((s) => s.id !== slideId);
+    saveContent({ ...content, carouselSlides: filtered });
+
+    // 1) Delete the carousel row from Supabase
+    trackWrite(
+      supabase
+        .from('carousel_slides')
+        .delete()
+        .eq('id', slideId)
+        .then(({ error }) => {
+          if (error) console.error('carousel_slides delete error:', error.message);
+        })
+    );
+
+    // 2) Best-effort cleanup of the associated storage object(s)
+    trackWrite(
+      (async () => {
+        try {
+          const { error } = await supabase.storage
+            .from('cms-assets')
+            .remove([`carousel/${slideId}.jpg`, `carousel/${slideId}.png`]);
+          if (error) {
+            console.warn('carousel storage cleanup warning:', error.message);
+          }
+        } catch (e) {
+          console.warn('Could not remove carousel storage object:', e);
+        }
+      })()
+    );
+  },
+  [content, saveContent, trackWrite]
+);
 
   // ---------- TESTIMONIALS ----------
 
