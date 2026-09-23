@@ -279,6 +279,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
 
   // Track whether a TopBar upsert is in flight so remote loads don't clobber it
   const topBarUpsertInFlightRef = useRef(false);
+  const topBarUpsertPromiseRef = useRef<Promise<void> | null>(null);
 
   const loadAdminUsers = useCallback(async () => {
     try {
@@ -464,6 +465,17 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       }
 
       const remoteTopBar = mapTopBarSettingsRow(topBarResult.data);
+
+      console.log('[CMS] loadSupabaseContent topBar:', {
+        hasRow: !!topBarResult.data,
+        remoteTopBar,
+        upsertInFlight: topBarUpsertInFlightRef.current,
+        currentLocalTopBar: content.topBarSettings,
+      });
+
+      useEffect(() => {
+        console.log('[CMS] content.topBarSettings changed:', content.topBarSettings);
+      }, [content.topBarSettings]);
 
       // IMPORTANT: if the admin just made an edit and the upsert is still in flight,
       // do NOT overwrite local state with stale remote data on this cycle.
@@ -703,26 +715,41 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     [loginAdminWithResult]
   );
 
-  const logoutAdmin = useCallback(async () => {
-    setIsAdmin(false);
-    setCurrentUser(null);
-    setIsInlineEditActive(false);
-    setIsAdminPanelOpen(false);
-    setIsLoginModalOpen(false);
-    setQuickEditTarget(null);
-    safeStorageRemove(STORAGE_KEY_AUTH);
-    safeStorageRemove(STORAGE_KEY_CURRENT_USER);
-
+const logoutAdmin = useCallback(async () => {
+  // 1) Wait for any in-flight TopBar save to reach Supabase
+  if (topBarUpsertPromiseRef.current) {
     try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error('Supabase sign-out failed:', error);
+      await topBarUpsertPromiseRef.current;
+    } catch (e) {
+      console.warn('TopBar upsert was still pending on logout:', e);
     }
+  }
 
+  // 2) Clear local auth state
+  setIsAdmin(false);
+  setCurrentUser(null);
+  setIsInlineEditActive(false);
+  setIsAdminPanelOpen(false);
+  setIsLoginModalOpen(false);
+  setQuickEditTarget(null);
+  safeStorageRemove(STORAGE_KEY_AUTH);
+  safeStorageRemove(STORAGE_KEY_CURRENT_USER);
+  // NOTE: do NOT remove STORAGE_KEY_CONTENT — we want edits to survive a logout
+
+  // 3) Sign out of Supabase Auth
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error('Supabase sign-out failed:', error);
+  }
+
+  // 4) Small delay to let any final network flushes settle, then reload
+  setTimeout(() => {
     if (typeof window !== 'undefined') {
       window.location.reload();
     }
-  }, []);
+  }, 250);
+}, []);
 
   const addUser = useCallback(
     async (
@@ -1233,35 +1260,36 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
 
       // 2) Push to Supabase in the background
       topBarUpsertInFlightRef.current = true;
-      void (async () => {
-        try {
-          const { error } = await supabase
-            .from('site_settings')
-            .upsert(
-              {
-                id: 'top_bar',
-                value: nextSettings,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'id' }
-            );
+      const promise = (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_settings')
+          .upsert(
+            {
+              id: 'top_bar',
+              value: nextSettings,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          )
+          .select();
 
-          if (error) {
-            console.error(
-              'Failed to upsert site_settings.top_bar:',
-              error.message,
-              '— did you create the site_settings table and RLS policies?'
-            );
-          }
-        } catch (err) {
-          console.error('Failed to persist TopBar settings to Supabase:', err);
-        } finally {
-          topBarUpsertInFlightRef.current = false;
+        if (error) {
+          console.error('❌ site_settings upsert error:', error);
+        } else {
+          console.log('✅ site_settings upsert OK:', data);
         }
-      })();
-    },
-    [content, saveContent]
-  );
+      } catch (err) {
+        console.error('❌ site_settings upsert threw:', err);
+      } finally {
+        topBarUpsertInFlightRef.current = false;
+      }
+    })();
+
+    topBarUpsertPromiseRef.current = promise;
+  },
+  [content, saveContent]
+);
 
   const exportBackup = useCallback(() => {
     const jsonStr = JSON.stringify(content, null, 2);
