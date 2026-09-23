@@ -448,6 +448,34 @@ const awaitPendingWrites = useCallback(async () => {
   const [isInlineEditActive, setIsInlineEditActive] = useState(false);
   const [quickEditTarget, setQuickEditTarget] = useState<QuickEditItem | null>(null);
 
+
+  const [unreadContactMessagesCount, setUnreadContactMessagesCount] = useState<number>(0);
+
+const refreshUnreadContactMessages = useCallback(async () => {
+  if (!isAdmin) {
+    setUnreadContactMessagesCount(0);
+    return;
+  }
+  try {
+    const { count, error } = await supabase
+      .from('consultation_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'new');
+
+    if (error) {
+      console.warn('Unread consultation requests count failed:', error.message);
+      return;
+    }
+    setUnreadContactMessagesCount(count ?? 0);
+  } catch (err) {
+    console.warn('Unread consultation requests count threw:', err);
+  }
+}, [isAdmin]);
+
+useEffect(() => {
+  void refreshUnreadContactMessages();
+}, [refreshUnreadContactMessages]);
+
   const [content, setContent] = useState<CMSContentData>(() => {
     try {
       const saved = safeStorageGet(STORAGE_KEY_CONTENT);
@@ -1597,35 +1625,7 @@ const deleteCarouselSlide = useCallback(
     return hasOverrides || customHero;
   }, [content]);
 
-  const [unreadContactMessagesCount, setUnreadContactMessagesCount] = useState<number>(0);
-
-const refreshUnreadContactMessages = useCallback(async () => {
-  // Only query when an admin is logged in — avoids leaking counts to visitors
-  if (!isAdmin) {
-    setUnreadContactMessagesCount(0);
-    return;
-  }
-  try {
-    const { count, error } = await supabase
-      .from('contact_messages')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'new');
-
-    if (error) {
-      console.warn('Unread contact messages count failed:', error.message);
-      return;
-    }
-    setUnreadContactMessagesCount(count ?? 0);
-  } catch (err) {
-    console.warn('Unread contact messages count threw:', err);
-  }
-}, [isAdmin]);
-
-// Refresh whenever admin logs in
-useEffect(() => {
-  void refreshUnreadContactMessages();
-}, [refreshUnreadContactMessages]);
-
+ 
   return (
     <CMSContext.Provider
       value={{

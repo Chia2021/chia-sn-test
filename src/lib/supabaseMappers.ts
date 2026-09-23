@@ -1,7 +1,7 @@
-import type { Language, ServiceItem, CarouselSlide, OfficeLocation, TestimonialItem, AdminUser } from '../types';
+import type { Language, ServiceItem, CarouselSlide, OfficeLocation, TestimonialItem, AdminUser, ContactMessage } from '../types';
 import type { FAQCategory, FAQItem } from '../data/faqData';
 
-import type { ContactMessage } from '../types';
+
 
 export const mapServiceRow = (row: Record<string, any>): ServiceItem => ({
   id: row.id,
@@ -279,4 +279,28 @@ export const mapContactMessageToRow = (msg: ContactMessage) => ({
   phone: msg.phone,
   service_type: msg.serviceType,
   message: msg.message,
+});
+
+
+
+export const mapConsultationRequestRow = (row: Record<string, any>): ContactMessage => ({
+  id: String(row.id),
+  createdAt: row.created_at ?? new Date().toISOString(),
+  companyName: row.company_name ?? '',
+  contactPerson: row.contact_person ?? '',
+  email: row.email ?? '',
+  phone: row.phone ?? '',
+  serviceType: row.service_type ?? '',
+  message: row.message ?? '',
+  trackingRef: row.tracking_ref ?? undefined,
+  status:
+    row.status === 'new' ||
+    row.status === 'read' ||
+    row.status === 'replied' ||
+    row.status === 'archived'
+      ? row.status
+      : 'new',
+  readAt: row.read_at ?? undefined,
+  repliedAt: row.replied_at ?? undefined,
+  adminNotes: row.admin_notes ?? undefined,
 });

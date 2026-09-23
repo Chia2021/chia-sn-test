@@ -30,59 +30,40 @@ export function ContactSection({ currentLang, selectedServicePreload }: ContactS
   const [submitted, setSubmitted] = useState(false);
   const [submissionRef, setSubmissionRef] = useState('');
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+ const handleSubmit = async (e: FormEvent) => {
+  e.preventDefault();
 
+  setIsSubmitting(true);
 
-// inside handleSubmit, after validation passes:
-try {
-  const { error } = await supabase.from('contact_messages').insert({
-    company_name: formData.companyName,
-    contact_person: formData.contactPerson,
-    email: formData.email,
-    phone: formData.phone,
-    service_type: formData.serviceType,
-    message: formData.message,
-  });
+  const randomRef = `REQ-${Date.now().toString(36).toUpperCase()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)
+    .toUpperCase()}`;
+
+  const { error } = await supabase
+    .from('consultation_requests')
+    .insert([
+      {
+        company_name: formData.companyName,
+        contact_person: formData.contactPerson,
+        email: formData.email,
+        phone: formData.phone,
+        service_type: formData.serviceType,
+        message: formData.message,
+        tracking_ref: randomRef,
+      },
+    ]);
 
   if (error) {
-    console.error('Contact message insert failed:', error.message);
-    // You can still show success, or show a soft warning — up to you.
-  }
-} catch (err) {
-  console.error('Contact message insert threw:', err);
-}
-
-// existing success UI:
-setSubmitted(true);
-    setIsSubmitting(true);
-
-    const randomRef = `REQ-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-
-    const { error } = await supabase
-      .from('consultation_requests')
-      .insert([
-        {
-          company_name: formData.companyName,
-          contact_person: formData.contactPerson,
-          email: formData.email,
-          phone: formData.phone,
-          service_type: formData.serviceType,
-          message: formData.message,
-          tracking_ref: randomRef,
-        },
-      ]);
-
-    if (error) {
-      console.error('Failed to submit consultation request:', error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSubmissionRef(randomRef);
-    setSubmitted(true);
+    console.error('Failed to submit consultation request:', error);
     setIsSubmitting(false);
-  };
+    return;
+  }
+
+  setSubmissionRef(randomRef);
+  setSubmitted(true);
+  setIsSubmitting(false);
+};
 
   const handleReset = () => {
     setSubmitted(false);
