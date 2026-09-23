@@ -25,6 +25,10 @@ import {
   mapTestimonialRow,
   mapTranslationRowsToObject,
   mapTopBarSettingsRow,
+  mapServiceToRow,
+  mapCarouselToRow,
+  mapOfficeLocationToRow,
+  mapTestimonialToRow,
 } from '../lib/supabaseMappers';
 
 const STORAGE_KEY_AUTH = 'chia_sn_admin_logged_in';
@@ -99,21 +103,13 @@ export const DEFAULT_TOP_BAR_SETTINGS: TopBarSettings = {
 
 const normalizeTopBarSettings = (raw: any): TopBarSettings => ({
   emailAddress:
-    typeof raw?.emailAddress === 'string'
-      ? raw.emailAddress
-      : DEFAULT_TOP_BAR_SETTINGS.emailAddress,
+    typeof raw?.emailAddress === 'string' ? raw.emailAddress : DEFAULT_TOP_BAR_SETTINGS.emailAddress,
   phoneNumber:
-    typeof raw?.phoneNumber === 'string'
-      ? raw.phoneNumber
-      : DEFAULT_TOP_BAR_SETTINGS.phoneNumber,
+    typeof raw?.phoneNumber === 'string' ? raw.phoneNumber : DEFAULT_TOP_BAR_SETTINGS.phoneNumber,
   linkedinUrl:
-    typeof raw?.linkedinUrl === 'string'
-      ? raw.linkedinUrl
-      : DEFAULT_TOP_BAR_SETTINGS.linkedinUrl,
+    typeof raw?.linkedinUrl === 'string' ? raw.linkedinUrl : DEFAULT_TOP_BAR_SETTINGS.linkedinUrl,
   facebookUrl:
-    typeof raw?.facebookUrl === 'string'
-      ? raw.facebookUrl
-      : DEFAULT_TOP_BAR_SETTINGS.facebookUrl,
+    typeof raw?.facebookUrl === 'string' ? raw.facebookUrl : DEFAULT_TOP_BAR_SETTINGS.facebookUrl,
   whatsappNumber:
     typeof raw?.whatsappNumber === 'string'
       ? raw.whatsappNumber
@@ -131,9 +127,7 @@ const normalizeTopBarSettings = (raw: any): TopBarSettings => ({
       ? raw.showWhatsapp
       : DEFAULT_TOP_BAR_SETTINGS.showWhatsapp,
   showHours:
-    typeof raw?.showHours === 'boolean'
-      ? raw.showHours
-      : DEFAULT_TOP_BAR_SETTINGS.showHours,
+    typeof raw?.showHours === 'boolean' ? raw.showHours : DEFAULT_TOP_BAR_SETTINGS.showHours,
   showAdminButton:
     typeof raw?.showAdminButton === 'boolean'
       ? raw.showAdminButton
@@ -277,9 +271,27 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     return hasStoredAuth && hasStoredCurrentUser;
   });
 
-  // Track whether a TopBar upsert is in flight so remote loads don't clobber it
-  const topBarUpsertInFlightRef = useRef(false);
-  const topBarUpsertPromiseRef = useRef<Promise<void> | null>(null);
+  // Track in-flight Supabase writes so logout can await them
+  const pendingWritesRef = useRef<Promise<unknown>[]>([]);
+
+const trackWrite = useCallback(<T,>(thenable: PromiseLike<T>): Promise<T> => {
+  // Normalize any thenable (Supabase builders are PromiseLike) to a real Promise
+  const promise = Promise.resolve(thenable);
+  pendingWritesRef.current.push(promise);
+  promise.finally(() => {
+    pendingWritesRef.current = pendingWritesRef.current.filter((p) => p !== promise);
+  });
+  return promise;
+}, []);
+
+const awaitPendingWrites = useCallback(async () => {
+  if (pendingWritesRef.current.length === 0) return;
+  try {
+    await Promise.allSettled(pendingWritesRef.current);
+  } catch (e) {
+    console.warn('Some pending writes failed before logout:', e);
+  }
+}, []);
 
   const loadAdminUsers = useCallback(async () => {
     try {
@@ -296,7 +308,6 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
 
       setCurrentUser((prev) => {
         if (!prev) return prev;
-
         const refreshedCurrent = nextUsers.find((user) => user.id === prev.id) ?? prev;
         safeStorageSet(STORAGE_KEY_CURRENT_USER, JSON.stringify(refreshedCurrent));
         return refreshedCurrent;
@@ -448,6 +459,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         officesResult,
         translationsResult,
         topBarResult,
+        heroResult,
       ] = await Promise.all([
         supabase.from('services').select('*').order('sort_order', { ascending: true }),
         supabase.from('carousel_slides').select('*').order('sort_order', { ascending: true }),
@@ -455,31 +467,11 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         supabase.from('office_locations').select('*').order('sort_order', { ascending: true }),
         supabase.from('page_translations').select('*'),
         supabase.from('site_settings').select('*').eq('id', 'top_bar').maybeSingle(),
+        supabase.from('site_settings').select('*').eq('id', 'hero').maybeSingle(),
       ]);
 
-      if (topBarResult.error) {
-        console.warn(
-          'site_settings fetch failed (did you create the table?):',
-          topBarResult.error.message
-        );
-      }
-
       const remoteTopBar = mapTopBarSettingsRow(topBarResult.data);
-
-      console.log('[CMS] loadSupabaseContent topBar:', {
-        hasRow: !!topBarResult.data,
-        remoteTopBar,
-        upsertInFlight: topBarUpsertInFlightRef.current,
-        currentLocalTopBar: content.topBarSettings,
-      });
-
-      useEffect(() => {
-        console.log('[CMS] content.topBarSettings changed:', content.topBarSettings);
-      }, [content.topBarSettings]);
-
-      // IMPORTANT: if the admin just made an edit and the upsert is still in flight,
-      // do NOT overwrite local state with stale remote data on this cycle.
-      const upsertInFlight = topBarUpsertInFlightRef.current;
+      const remoteHero = mapTopBarSettingsRow(heroResult.data);
 
       const hasSupabaseData =
         (servicesResult.data && servicesResult.data.length > 0) ||
@@ -487,11 +479,20 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         (testimonialsResult.data && testimonialsResult.data.length > 0) ||
         (officesResult.data && officesResult.data.length > 0) ||
         (translationsResult.data && translationsResult.data.length > 0) ||
-        !!remoteTopBar;
+        !!remoteTopBar ||
+        !!remoteHero;
 
       if (!hasSupabaseData) return;
 
       setContent((prevContent) => {
+        // Merge remote hero settings if present
+        const heroBgFromRemote =
+          remoteHero && typeof remoteHero.heroBg === 'string' ? remoteHero.heroBg : null;
+        const heroImagesFromRemote =
+          remoteHero && Array.isArray(remoteHero.heroImages) && remoteHero.heroImages.length > 0
+            ? (remoteHero.heroImages as string[])
+            : null;
+
         const nextContent: CMSContentData = {
           translationsOverride: {
             FR: translationsResult.data
@@ -513,15 +514,15 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
           officeLocations: officesResult.data?.length
             ? officesResult.data.map(mapOfficeLocationRow)
             : prevContent.officeLocations,
-          heroBg: prevContent.heroBg || DEFAULT_HERO_BG,
+          heroBg: heroBgFromRemote || prevContent.heroBg || DEFAULT_HERO_BG,
           heroImages:
-            prevContent.heroImages && prevContent.heroImages.length > 0
+            heroImagesFromRemote ||
+            (prevContent.heroImages && prevContent.heroImages.length > 0
               ? prevContent.heroImages
-              : DEFAULT_HERO_SLIDES,
-          topBarSettings:
-            remoteTopBar && !upsertInFlight
-              ? normalizeTopBarSettings(remoteTopBar)
-              : prevContent.topBarSettings,
+              : DEFAULT_HERO_SLIDES),
+          topBarSettings: remoteTopBar
+            ? normalizeTopBarSettings(remoteTopBar)
+            : prevContent.topBarSettings,
         };
 
         try {
@@ -715,41 +716,32 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     [loginAdminWithResult]
   );
 
-const logoutAdmin = useCallback(async () => {
-  // 1) Wait for any in-flight TopBar save to reach Supabase
-  if (topBarUpsertPromiseRef.current) {
+  const logoutAdmin = useCallback(async () => {
+    // 1) Wait for any in-flight Supabase writes
+    await awaitPendingWrites();
+
+    setIsAdmin(false);
+    setCurrentUser(null);
+    setIsInlineEditActive(false);
+    setIsAdminPanelOpen(false);
+    setIsLoginModalOpen(false);
+    setQuickEditTarget(null);
+    safeStorageRemove(STORAGE_KEY_AUTH);
+    safeStorageRemove(STORAGE_KEY_CURRENT_USER);
+
     try {
-      await topBarUpsertPromiseRef.current;
-    } catch (e) {
-      console.warn('TopBar upsert was still pending on logout:', e);
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Supabase sign-out failed:', error);
     }
-  }
 
-  // 2) Clear local auth state
-  setIsAdmin(false);
-  setCurrentUser(null);
-  setIsInlineEditActive(false);
-  setIsAdminPanelOpen(false);
-  setIsLoginModalOpen(false);
-  setQuickEditTarget(null);
-  safeStorageRemove(STORAGE_KEY_AUTH);
-  safeStorageRemove(STORAGE_KEY_CURRENT_USER);
-  // NOTE: do NOT remove STORAGE_KEY_CONTENT — we want edits to survive a logout
-
-  // 3) Sign out of Supabase Auth
-  try {
-    await supabase.auth.signOut();
-  } catch (error) {
-    console.error('Supabase sign-out failed:', error);
-  }
-
-  // 4) Small delay to let any final network flushes settle, then reload
-  setTimeout(() => {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  }, 250);
-}, []);
+    // 2) Small delay so final network flush settles before reload
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    }, 250);
+  }, [awaitPendingWrites]);
 
   const addUser = useCallback(
     async (
@@ -986,8 +978,18 @@ const logoutAdmin = useCallback(async () => {
         },
       };
       saveContent(updated);
+
+      // Persist single-language translation
+      trackWrite(
+        supabase
+          .from('page_translations')
+          .upsert({ key, locale: lang, value }, { onConflict: 'key,locale' })
+          .then(({ error }) => {
+            if (error) console.error('page_translations upsert error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
   );
 
   const updateTextBilingual = useCallback(
@@ -995,37 +997,27 @@ const logoutAdmin = useCallback(async () => {
       const updated: CMSContentData = {
         ...content,
         translationsOverride: {
-          FR: {
-            ...content.translationsOverride.FR,
-            [key]: frValue,
-          },
-          EN: {
-            ...content.translationsOverride.EN,
-            [key]: enValue,
-          },
+          FR: { ...content.translationsOverride.FR, [key]: frValue },
+          EN: { ...content.translationsOverride.EN, [key]: enValue },
         },
       };
       saveContent(updated);
 
-      // Persist bilingual translation to Supabase page_translations (best effort)
-      void (async () => {
-        try {
-          const rows = [
-            { key, locale: 'FR', value: frValue },
-            { key, locale: 'EN', value: enValue },
-          ];
-          const { error } = await supabase
-            .from('page_translations')
-            .upsert(rows, { onConflict: 'key,locale' });
-          if (error) {
-            console.warn('page_translations upsert failed:', error.message);
-          }
-        } catch (err) {
-          console.warn('page_translations upsert threw:', err);
-        }
-      })();
+      const rows = [
+        { key, locale: 'FR', value: frValue },
+        { key, locale: 'EN', value: enValue },
+      ];
+
+      trackWrite(
+        supabase
+          .from('page_translations')
+          .upsert(rows, { onConflict: 'key,locale' })
+          .then(({ error }) => {
+            if (error) console.error('page_translations upsert error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
   );
 
   const triggerQuickEdit = useCallback(
@@ -1042,58 +1034,75 @@ const logoutAdmin = useCallback(async () => {
     [content.translationsOverride]
   );
 
+  // ---------- HERO BG / IMAGES ----------
+
+  const persistHeroSettings = useCallback(
+    (heroBg: string, heroImages: string[]) => {
+      trackWrite(
+        supabase
+          .from('site_settings')
+          .upsert(
+            {
+              id: 'hero',
+              value: { heroBg, heroImages },
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          )
+          .then(({ error }) => {
+            if (error) console.error('site_settings.hero upsert error:', error.message);
+          })
+      );
+    },
+    [trackWrite]
+  );
+
   const updateHeroBg = useCallback(
     (newBg: string) => {
       const currentList =
-        content.heroImages && content.heroImages.length > 0
-          ? content.heroImages
-          : DEFAULT_HERO_SLIDES;
+        content.heroImages && content.heroImages.length > 0 ? content.heroImages : DEFAULT_HERO_SLIDES;
       const updatedList = [newBg, ...currentList.filter((img) => img !== newBg)];
       saveContent({ ...content, heroBg: newBg, heroImages: updatedList });
+      persistHeroSettings(newBg, updatedList);
     },
-    [content, saveContent]
+    [content, saveContent, persistHeroSettings]
   );
 
   const updateHeroImages = useCallback(
     (images: string[]) => {
       if (!images.length) return;
-      saveContent({
-        ...content,
-        heroImages: images,
-        heroBg: images[0] || content.heroBg,
-      });
+      const newBg = images[0] || content.heroBg;
+      saveContent({ ...content, heroImages: images, heroBg: newBg });
+      persistHeroSettings(newBg, images);
     },
-    [content, saveContent]
+    [content, saveContent, persistHeroSettings]
   );
 
   const addHeroImage = useCallback(
     (image: string) => {
       const current =
-        content.heroImages && content.heroImages.length > 0
-          ? content.heroImages
-          : DEFAULT_HERO_SLIDES;
+        content.heroImages && content.heroImages.length > 0 ? content.heroImages : DEFAULT_HERO_SLIDES;
       const updated = [...current, image];
       saveContent({ ...content, heroImages: updated });
+      persistHeroSettings(content.heroBg, updated);
     },
-    [content, saveContent]
+    [content, saveContent, persistHeroSettings]
   );
 
   const removeHeroImage = useCallback(
     (index: number) => {
       const current =
-        content.heroImages && content.heroImages.length > 0
-          ? content.heroImages
-          : DEFAULT_HERO_SLIDES;
+        content.heroImages && content.heroImages.length > 0 ? content.heroImages : DEFAULT_HERO_SLIDES;
       if (current.length <= 1) return;
       const updated = current.filter((_, i) => i !== index);
-      saveContent({
-        ...content,
-        heroImages: updated,
-        heroBg: updated[0] || content.heroBg,
-      });
+      const newBg = updated[0] || content.heroBg;
+      saveContent({ ...content, heroImages: updated, heroBg: newBg });
+      persistHeroSettings(newBg, updated);
     },
-    [content, saveContent]
+    [content, saveContent, persistHeroSettings]
   );
+
+  // ---------- SERVICES ----------
 
   const updateService = useCallback(
     (updatedService: ServiceItem) => {
@@ -1106,24 +1115,52 @@ const logoutAdmin = useCallback(async () => {
         newServices = [...content.services, updatedService];
       }
       saveContent({ ...content, services: newServices });
+
+      trackWrite(
+        supabase
+          .from('services')
+          .upsert(mapServiceToRow(updatedService), { onConflict: 'id' })
+          .then(({ error }) => {
+            if (error) console.error('services upsert error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
   );
 
   const addService = useCallback(
     (newService: ServiceItem) => {
       saveContent({ ...content, services: [...content.services, newService] });
+      trackWrite(
+        supabase
+          .from('services')
+          .upsert(mapServiceToRow(newService), { onConflict: 'id' })
+          .then(({ error }) => {
+            if (error) console.error('services upsert error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
   );
 
   const deleteService = useCallback(
     (serviceId: string) => {
       const filtered = content.services.filter((s) => s.id !== serviceId);
       saveContent({ ...content, services: filtered });
+      trackWrite(
+        supabase
+          .from('services')
+          .delete()
+          .eq('id', serviceId)
+          .then(({ error }) => {
+            if (error) console.error('services delete error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
   );
+
+  // ---------- CAROUSEL ----------
 
   const updateCarouselSlide = useCallback(
     (slide: CarouselSlide) => {
@@ -1136,23 +1173,75 @@ const logoutAdmin = useCallback(async () => {
         newSlides = [...content.carouselSlides, slide];
       }
       saveContent({ ...content, carouselSlides: newSlides });
+
+      trackWrite(
+        supabase
+          .from('carousel_slides')
+          .upsert(
+            { ...mapCarouselToRow(slide), sort_order: index >= 0 ? index : newSlides.length - 1 },
+            { onConflict: 'id' }
+          )
+          .then(({ error }) => {
+            if (error) console.error('carousel_slides upsert error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
   );
 
   const addCarouselSlide = useCallback(
     (slide: CarouselSlide) => {
-      saveContent({ ...content, carouselSlides: [...content.carouselSlides, slide] });
+      const newSlides = [...content.carouselSlides, slide];
+      saveContent({ ...content, carouselSlides: newSlides });
+      trackWrite(
+        supabase
+          .from('carousel_slides')
+          .upsert(
+            { ...mapCarouselToRow(slide), sort_order: newSlides.length - 1 },
+            { onConflict: 'id' }
+          )
+          .then(({ error }) => {
+            if (error) console.error('carousel_slides upsert error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
   );
 
   const deleteCarouselSlide = useCallback(
     (slideId: string) => {
       const filtered = content.carouselSlides.filter((s) => s.id !== slideId);
       saveContent({ ...content, carouselSlides: filtered });
+      trackWrite(
+        supabase
+          .from('carousel_slides')
+          .delete()
+          .eq('id', slideId)
+          .then(({ error }) => {
+            if (error) console.error('carousel_slides delete error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
+  );
+
+  // ---------- TESTIMONIALS ----------
+
+  const persistTestimonial = useCallback(
+    (testi: TestimonialItem, index: number) => {
+      trackWrite(
+        supabase
+          .from('testimonials')
+          .upsert(
+            { ...mapTestimonialToRow(testi), sort_order: index >= 0 ? index : 0 },
+            { onConflict: 'id' }
+          )
+          .then(({ error }) => {
+            if (error) console.error('testimonials upsert error:', error.message);
+          })
+      );
+    },
+    [trackWrite]
   );
 
   const updateTestimonial = useCallback(
@@ -1166,15 +1255,18 @@ const logoutAdmin = useCallback(async () => {
         newTestis = [...content.testimonials, testi];
       }
       saveContent({ ...content, testimonials: newTestis });
+      persistTestimonial(testi, index);
     },
-    [content, saveContent]
+    [content, saveContent, persistTestimonial]
   );
 
   const addTestimonial = useCallback(
     (testi: TestimonialItem) => {
-      saveContent({ ...content, testimonials: [...content.testimonials, testi] });
+      const newTestis = [...content.testimonials, testi];
+      saveContent({ ...content, testimonials: newTestis });
+      persistTestimonial(testi, newTestis.length - 1);
     },
-    [content, saveContent]
+    [content, saveContent, persistTestimonial]
   );
 
   const approveTestimonial = useCallback(
@@ -1189,8 +1281,13 @@ const logoutAdmin = useCallback(async () => {
           : t
       );
       saveContent({ ...content, testimonials: updated });
+      const updatedItem = updated.find((t) => t.id === testiId);
+      if (updatedItem) {
+        const idx = updated.findIndex((t) => t.id === testiId);
+        persistTestimonial(updatedItem, idx);
+      }
     },
-    [content, saveContent]
+    [content, saveContent, persistTestimonial]
   );
 
   const rejectTestimonial = useCallback(
@@ -1205,8 +1302,13 @@ const logoutAdmin = useCallback(async () => {
           : t
       );
       saveContent({ ...content, testimonials: updated });
+      const updatedItem = updated.find((t) => t.id === testiId);
+      if (updatedItem) {
+        const idx = updated.findIndex((t) => t.id === testiId);
+        persistTestimonial(updatedItem, idx);
+      }
     },
-    [content, saveContent]
+    [content, saveContent, persistTestimonial]
   );
 
   const submitClientTestimonial = useCallback(
@@ -1223,46 +1325,66 @@ const logoutAdmin = useCallback(async () => {
         status: 'pending',
         submittedAt: draft.submittedAt || new Date().toISOString(),
       };
-      saveContent({ ...content, testimonials: [...content.testimonials, newTestimonial] });
+      const newTestis = [...content.testimonials, newTestimonial];
+      saveContent({ ...content, testimonials: newTestis });
+      // Note: submitted testimonials may come from anonymous visitors.
+      // Only persist if the caller has write permission (RLS on `testimonials`).
+      persistTestimonial(newTestimonial, newTestis.length - 1);
     },
-    [content, saveContent]
+    [content, saveContent, persistTestimonial]
   );
 
   const deleteTestimonial = useCallback(
     (testiId: string) => {
       const filtered = content.testimonials.filter((t) => t.id !== testiId);
       saveContent({ ...content, testimonials: filtered });
+      trackWrite(
+        supabase
+          .from('testimonials')
+          .delete()
+          .eq('id', testiId)
+          .then(({ error }) => {
+            if (error) console.error('testimonials delete error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
   );
+
+  // ---------- OFFICE LOCATIONS ----------
 
   const updateOfficeLocation = useCallback(
     (index: number, location: OfficeLocation) => {
       const updated = [...content.officeLocations];
       updated[index] = location;
       saveContent({ ...content, officeLocations: updated });
+
+      // office_locations has no unique key — we rely on `city_fr` as an ad-hoc id
+      const rowId = location.city.FR || `office-${index}`;
+      trackWrite(
+        supabase
+          .from('office_locations')
+          .upsert(
+            { ...mapOfficeLocationToRow(location), id: rowId, sort_order: index },
+            { onConflict: 'id' }
+          )
+          .then(({ error }) => {
+            if (error) console.error('office_locations upsert error:', error.message);
+          })
+      );
     },
-    [content, saveContent]
+    [content, saveContent, trackWrite]
   );
+
+  // ---------- TOP BAR ----------
 
   const updateTopBarSettings = useCallback(
     (updates: Partial<TopBarSettings>) => {
-      const nextSettings = normalizeTopBarSettings({
-        ...content.topBarSettings,
-        ...updates,
-      });
+      const nextSettings = normalizeTopBarSettings({ ...content.topBarSettings, ...updates });
+      saveContent({ ...content, topBarSettings: nextSettings });
 
-      // 1) Update local state immediately (optimistic)
-      saveContent({
-        ...content,
-        topBarSettings: nextSettings,
-      });
-
-      // 2) Push to Supabase in the background
-      topBarUpsertInFlightRef.current = true;
-      const promise = (async () => {
-      try {
-        const { data, error } = await supabase
+      trackWrite(
+        supabase
           .from('site_settings')
           .upsert(
             {
@@ -1272,24 +1394,13 @@ const logoutAdmin = useCallback(async () => {
             },
             { onConflict: 'id' }
           )
-          .select();
-
-        if (error) {
-          console.error('❌ site_settings upsert error:', error);
-        } else {
-          console.log('✅ site_settings upsert OK:', data);
-        }
-      } catch (err) {
-        console.error('❌ site_settings upsert threw:', err);
-      } finally {
-        topBarUpsertInFlightRef.current = false;
-      }
-    })();
-
-    topBarUpsertPromiseRef.current = promise;
-  },
-  [content, saveContent]
-);
+          .then(({ error }) => {
+            if (error) console.error('site_settings.top_bar upsert error:', error.message);
+          })
+      );
+    },
+    [content, saveContent, trackWrite]
+  );
 
   const exportBackup = useCallback(() => {
     const jsonStr = JSON.stringify(content, null, 2);
