@@ -41,8 +41,42 @@ const safeStorageSet = (key: string, value: string) => {
   }
 };
 
+function useDynamicFavicon(logoUrl: string | null) {
+  useEffect(() => {
+    // Default fallback icon shipped in /public
+    const fallback = '/favicon.svg';
+    const desiredHref = logoUrl && logoUrl.length > 0 ? logoUrl : fallback;
+
+    // Create or update the <link rel="icon"> tag
+    let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+
+    // Only assign if changed — prevents needless DOM writes
+    if (link.href !== desiredHref) {
+      link.href = desiredHref;
+    }
+
+    // Also update apple-touch-icon for a nicer mobile home-screen icon
+    let apple = document.querySelector<HTMLLinkElement>("link[rel='apple-touch-icon']");
+    if (!apple) {
+      apple = document.createElement('link');
+      apple.rel = 'apple-touch-icon';
+      document.head.appendChild(apple);
+    }
+    if (apple.href !== desiredHref) {
+      apple.href = desiredHref;
+    }
+  }, [logoUrl]);
+}
+
 function AppContent() {
-  const { services } = useCMS();
+  const { services, logoSettings } = useCMS();
+
+  useDynamicFavicon(logoSettings.logoUrl);
 
   const [currentLang, setCurrentLang] = useState<Language>(() => {
     if (typeof window !== 'undefined') {
